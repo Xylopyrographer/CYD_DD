@@ -225,7 +225,9 @@ void setup() {
     // ===== PREFERENCES INITIALIZATION (Load settings) =====
     // Must load preferences BEFORE initialising TFT so we know the background colour
     // Use isKey() to detect a fresh/erased device without triggering NVS NOT_FOUND log errors.
-    prefs.begin( "sys", true );  // read-only to probe
+    // Open read-write (not read-only) so the namespace is created if absent — avoids the
+    // nvs_open NOT_FOUND error that fires when the namespace has never been written.
+    prefs.begin( "sys", false );  // creates namespace if absent; isKey() still false on fresh device
     bool nvsInitialized = prefs.isKey( "ssid" );
     prefs.end();
 
