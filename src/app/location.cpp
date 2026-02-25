@@ -55,7 +55,7 @@ void syncRegion() {
 
     int httpCode = http.GET();
     if ( httpCode == 200 ) {
-        StaticJsonDocument<512> doc;
+        JsonDocument doc;
         DeserializationError error = deserializeJson( doc, http.getString() );
 
         if ( !error && doc[ "status" ] == "success" ) {

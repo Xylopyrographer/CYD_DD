@@ -102,7 +102,7 @@ void checkForUpdate() {
         String payload = http.getString();
         log_d( "[OTA] Response: %s", payload.c_str() );
 
-        DynamicJsonDocument doc( 1024 );
+        JsonDocument doc;
         DeserializationError error = deserializeJson( doc, payload );
 
         if ( !error ) {
