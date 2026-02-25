@@ -2,6 +2,16 @@
 
 ---
 
+## v1.0.3 — 2026-02-25
+
+### Bug Fixes
+
+- **Digital clock leading zero** — In 12-hour mode the hour was always zero-padded (e.g. *08:45*). The leading zero is now suppressed in 12-hour mode (e.g. *8:45*) and retained in 24-hour mode (e.g. *08:45*). The time string is recentred automatically each redraw so no layout shift occurs.
+
+- **Spurious `NOT_FOUND` log error for recent cities** — On a device with no saved recent-city history the startup sequence logged `[E] recent0c NOT_FOUND` for every slot in the list. Root cause: `getString()` was called unconditionally and the NVS driver logs an error when the key does not exist. Fixed by probing with `isKey()` first and exiting the load loop early when the key is absent.
+
+---
+
 ## v1.0.2 — 2026-02-25
 
 ### Bug Fixes
