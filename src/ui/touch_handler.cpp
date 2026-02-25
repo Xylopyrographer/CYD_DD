@@ -739,8 +739,9 @@ void handleTouch( int x, int y ) {
                 }
             }
             else if ( x >= 155 && x <= 260 && y >= 205 && y <= 235 ) {
-                currentState = CLOCK;
-                lastSec = -1;
+                currentState = SETTINGS;
+                menuOffset = 0;
+                drawSettingsScreen();
             }
             break;
         }
