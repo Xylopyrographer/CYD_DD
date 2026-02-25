@@ -1,0 +1,9 @@
+.pio
+.vscode
+.DS_Store
+*.bak
+support/
+iterations/
+bin/
+PROJECT_CONTEXT.md
+REFACTOR_ANALYSIS.md
