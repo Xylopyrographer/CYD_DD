@@ -204,7 +204,7 @@ void drawDigitalClock( int h, int m, int s ) {
     }
 
     char timeStr[ 6 ];
-    sprintf( timeStr, "%02d:%02d", displayH, m );
+    sprintf( timeStr, "%d:%02d", displayH, m );
 
     tft.setTextDatum( MC_DATUM );
     tft.setTextColor( clockColor, bgColor );
