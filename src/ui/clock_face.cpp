@@ -204,7 +204,12 @@ void drawDigitalClock( int h, int m, int s ) {
     }
 
     char timeStr[ 6 ];
-    sprintf( timeStr, "%d:%02d", displayH, m );
+    if ( is12hFormat ) {
+        sprintf( timeStr, "%d:%02d", displayH, m );   // no leading zero in 12h
+    }
+    else {
+        sprintf( timeStr, "%02d:%02d", displayH, m ); // leading zero in 24h
+    }
 
     tft.setTextDatum( MC_DATUM );
     tft.setTextColor( clockColor, bgColor );
