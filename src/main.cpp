@@ -224,44 +224,51 @@ void setup() {
 
     // ===== PREFERENCES INITIALIZATION (Load settings) =====
     // Must load preferences BEFORE initialising TFT so we know the background colour
-    prefs.begin( "sys", false );
-    ssid = prefs.getString( "ssid", "" );
-    password = deobfuscatePassword( prefs.getString( "pass", "" ) );
-    isDigitalClock = prefs.getBool( "digiClock", false );
-    is12hFormat = prefs.getBool( "12hFmt", false );
-
-    // FIX: Load saved theme
-    themeMode = prefs.getInt( "themeMode", THEME_DARK );
-    isWhiteTheme = prefs.getBool( "theme", false );
-    invertColors = prefs.getBool( "invertColors", false );
-
-    // Load OTA settings
-    otaInstallMode = prefs.getInt( "otaMode", 1 ); // Default: By user
-    log_d( "[OTA] Install mode: %d", otaInstallMode );
-
-    // FIX: Load brightness and Auto Dim settings
-    brightness = prefs.getInt( "bright", 255 ); // Load saved brightness
-    autoDimEnabled = prefs.getBool( "autoDimEnabled", false );
-    autoDimStart = prefs.getInt( "autoDimStart", 22 );
-    autoDimEnd = prefs.getInt( "autoDimEnd", 6 );
-    autoDimLevel = prefs.getInt( "autoDimLevel", 20 );
-
-    // Load touch calibration (if user has calibrated; otherwise keep defaults)
-    touchXMin = prefs.getInt( "calXMin", touchXMin );
-    touchXMax = prefs.getInt( "calXMax", touchXMax );
-    touchYMin = prefs.getInt( "calYMin", touchYMin );
-    touchYMax = prefs.getInt( "calYMax", touchYMax );
-
-    // FIX: Load temperature unit setting (°C / °F)
-    weatherUnitF = prefs.getBool( "weatherUnitF", false );
-    weatherUnitMph = prefs.getBool( "weatherUnitMph", false );
-    weatherUnitInHg = prefs.getBool( "weatherUnitInHg", false );
-    log_d( "[SETUP] Weather unit loaded: %s", weatherUnitF ? "°F" : "°C" );
-
+    // Use isKey() to detect a fresh/erased device without triggering NVS NOT_FOUND log errors.
+    // Open read-write (not read-only) so the namespace is created if absent — avoids the
+    // nvs_open NOT_FOUND error that fires when the namespace has never been written.
+    prefs.begin( "sys", false );  // creates namespace if absent; isKey() still false on fresh device
+    bool nvsInitialized = prefs.isKey( "ssid" );
     prefs.end();
 
-    // Debug output including invertColors
-    log_d( "[SETUP] Preferences loaded - Theme: %d, AutoDim: %d, InvertColors: %s", themeMode, autoDimEnabled, invertColors ? "TRUE" : "FALSE" );
+    if ( nvsInitialized ) {
+        prefs.begin( "sys", false );
+        ssid = prefs.getString( "ssid", "" );
+        password = deobfuscatePassword( prefs.getString( "pass", "" ) );
+        isDigitalClock = prefs.getBool( "digiClock", false );
+        is12hFormat = prefs.getBool( "12hFmt", false );
+
+        // FIX: Load saved theme
+        themeMode = prefs.getInt( "themeMode", THEME_DARK );
+        isWhiteTheme = prefs.getBool( "theme", false );
+        invertColors = prefs.getBool( "invertColors", false );
+
+        // Load OTA settings
+        otaInstallMode = prefs.getInt( "otaMode", 1 ); // Default: By user
+        log_d( "[OTA] Install mode: %d", otaInstallMode );
+
+        // FIX: Load brightness and Auto Dim settings
+        brightness = prefs.getInt( "bright", 255 ); // Load saved brightness
+        autoDimEnabled = prefs.getBool( "autoDimEnabled", false );
+        autoDimStart = prefs.getInt( "autoDimStart", 22 );
+        autoDimEnd = prefs.getInt( "autoDimEnd", 6 );
+        autoDimLevel = prefs.getInt( "autoDimLevel", 20 );
+
+        // Load touch calibration (if user has calibrated; otherwise keep defaults)
+        touchXMin = prefs.getInt( "calXMin", touchXMin );
+        touchXMax = prefs.getInt( "calXMax", touchXMax );
+        touchYMin = prefs.getInt( "calYMin", touchYMin );
+        touchYMax = prefs.getInt( "calYMax", touchYMax );
+
+        // FIX: Load temperature unit setting (°C / °F)
+        weatherUnitF = prefs.getBool( "weatherUnitF", false );
+        weatherUnitMph = prefs.getBool( "weatherUnitMph", false );
+        weatherUnitInHg = prefs.getBool( "weatherUnitInHg", false );
+        log_d( "[SETUP] Weather unit loaded: %s", weatherUnitF ? "°F" : "°C" );
+
+        prefs.end();
+        log_d( "[SETUP] Preferences loaded - Theme: %d, AutoDim: %d, InvertColors: %s", themeMode, autoDimEnabled, invertColors ? "TRUE" : "FALSE" );
+    } // end if ( nvsInitialized )
 
     // ===== TFT LCD INITIALIZATION =====
     tft.init();
@@ -293,8 +300,10 @@ void setup() {
     tft.setTextDatum( MC_DATUM );
 
     // ===== LOAD SAVED LOCATION =====
-    loadSavedLocation();
-    loadRecentCities();
+    if ( nvsInitialized ) {
+        loadSavedLocation();
+        loadRecentCities();
+    }
     weatherCity = cityName;
 
     log_i( "[SETUP] Location loaded: %s", cityName.c_str() );
