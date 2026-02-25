@@ -50,7 +50,7 @@ bool lookupCountryRESTAPI( String countryName ) {
 
     String response = http.getString();
 
-    StaticJsonDocument<2000> doc;
+    JsonDocument doc;
     DeserializationError error = deserializeJson( doc, response );
     if ( error ) {
         log_e( "[LOOKUP-REST] JSON error %s", error.c_str() );
@@ -136,7 +136,7 @@ bool lookupCityNominatim( String cityName, String countryHint ) {
 
     if ( httpCode == 200 ) {
         String response = http.getString();
-        StaticJsonDocument<4000> doc;
+        JsonDocument doc;
         DeserializationError error = deserializeJson( doc, response );
         if ( error ) {
             log_e( "[LOOKUP-CITY-NOM] JSON error" );

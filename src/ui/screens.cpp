@@ -171,6 +171,7 @@ void scanWifiNetworks() {
         }
     }
     log_d( "[WIFI] Scan complete. Found %d networks", wifiCount );
+    WiFi.scanDelete();
 }
 
 // ---------------------------------------------------------------------------
@@ -1550,6 +1551,7 @@ void handleKeyboardTouch( int x, int y ) {
 
             showWifiConnectingScreen( ssid );
             WiFi.mode( WIFI_STA );
+            WiFi.scanDelete();
             WiFi.disconnect();
             delay( 100 );
             WiFi.begin( ssid.c_str(), password.c_str() );

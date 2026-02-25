@@ -180,25 +180,25 @@ void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
 
     if ( httpCode == 200 ) {
         String payload = http.getString();
-        DynamicJsonDocument doc( 2048 );
+        JsonDocument doc;
         DeserializationError error = deserializeJson( doc, payload );
 
         if ( !error ) {
             // 1. Get IANA timezone name
             String ianaName = "";
-            if ( doc.containsKey( "timeZone" ) ) {
+            if ( doc[ "timeZone" ] ) {
                 ianaName = doc[ "timeZone" ].as<String>();
             }
 
             // 2. Get current UTC offset in seconds
             int currentOffset = 0;
-            if ( doc[ "currentUtcOffset" ].containsKey( "seconds" ) ) {
+            if ( doc[ "currentUtcOffset" ][ "seconds" ] ) {
                 currentOffset = doc[ "currentUtcOffset" ][ "seconds" ].as<int>();
             }
 
             // 3. Get standard offset (without DST)
             int standardOffset = currentOffset;
-            if ( doc[ "standardUtcOffset" ].containsKey( "seconds" ) ) {
+            if ( doc[ "standardUtcOffset" ][ "seconds" ] ) {
                 standardOffset = doc[ "standardUtcOffset" ][ "seconds" ].as<int>();
             }
 

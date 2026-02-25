@@ -466,6 +466,7 @@ void handleTouch( int x, int y ) {
                 password = passwordBuffer;
                 showWifiConnectingScreen( ssid );
                 WiFi.mode( WIFI_STA );
+                WiFi.scanDelete();
                 WiFi.disconnect();
                 delay( 100 );
                 WiFi.begin( ssid.c_str(), password.c_str() );

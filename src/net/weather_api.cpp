@@ -124,7 +124,7 @@ void fetchWeatherData() {
 
         if ( httpCode == 200 ) {
             String payload = http.getString();
-            DynamicJsonDocument doc( 4096 );
+            JsonDocument doc;
             deserializeJson( doc, payload );
 
             bool found = false;
@@ -209,7 +209,7 @@ void fetchWeatherData() {
 
     if ( httpCode == 200 ) {
         String payload = http.getString();
-        DynamicJsonDocument doc( 8192 ); // Larger buffer for weather data
+        JsonDocument doc;
         DeserializationError error = deserializeJson( doc, payload );
 
         if ( !error ) {
@@ -227,14 +227,14 @@ void fetchWeatherData() {
             forecast[ 1 ].tempMin = doc[ "daily" ][ "temperature_2m_min" ][ 2 ];
 
             // Sunrise/Sunset processing
-            if ( doc[ "daily" ].containsKey( "sunrise" ) && doc[ "daily" ][ "sunrise" ].size() > 0 ) {
+            if ( doc[ "daily" ][ "sunrise" ].size() > 0 ) {
                 String sunriseRaw = doc[ "daily" ][ "sunrise" ][ 0 ].as<String>();
                 int tPos = sunriseRaw.indexOf( 'T' );
                 if ( tPos > 0 ) {
                     sunriseTime = sunriseRaw.substring( tPos + 1, tPos + 6 );
                 }
             }
-            if ( doc[ "daily" ].containsKey( "sunset" ) && doc[ "daily" ][ "sunset" ].size() > 0 ) {
+            if ( doc[ "daily" ][ "sunset" ].size() > 0 ) {
                 String sunsetRaw = doc[ "daily" ][ "sunset" ][ 0 ].as<String>();
                 int tPos = sunsetRaw.indexOf( 'T' );
                 if ( tPos > 0 ) {
@@ -243,7 +243,7 @@ void fetchWeatherData() {
             }
 
             // Pressure processing
-            if ( doc[ "current" ].containsKey( "pressure_msl" ) ) {
+            if ( doc[ "current" ][ "pressure_msl" ] ) {
                 currentPressure = doc[ "current" ][ "pressure_msl" ].as<int>();
             }
             else {
