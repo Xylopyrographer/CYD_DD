@@ -3,5 +3,3 @@
 #include "app_state.h"
 
 void loadRecentCities();
-void addToRecentCities( String city, String country, String timezone,
-                         int gmtOffset, int dstOffset );
