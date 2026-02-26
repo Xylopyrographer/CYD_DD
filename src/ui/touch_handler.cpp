@@ -101,6 +101,14 @@ extern int        autoDimEnd;
 extern int        autoDimLevel;
 extern bool       invertColors;
 extern bool       displayFlipped;
+extern int        touchXMin;
+extern int        touchXMax;
+extern int        touchYMin;
+extern int        touchYMax;
+extern int        touchXMinF;
+extern int        touchXMaxF;
+extern int        touchYMinF;
+extern int        touchYMaxF;
 extern int        autoDimEditMode;
 extern int        autoDimTempStart;
 extern int        autoDimTempEnd;
@@ -1207,8 +1215,22 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "dispFlip", displayFlipped );
                 prefs.end();
+                // Load cal set for new orientation (defaults if never calibrated in that orientation)
+                prefs.begin( "sys", true );
+                if ( displayFlipped ) {
+                    touchXMin = prefs.getInt( "calXMinF", 3900 );
+                    touchXMax = prefs.getInt( "calXMaxF",  200 );
+                    touchYMin = prefs.getInt( "calYMinF", 3900 );
+                    touchYMax = prefs.getInt( "calYMaxF",  200 );
+                }
+                else {
+                    touchXMin = prefs.getInt( "calXMin",  200 );
+                    touchXMax = prefs.getInt( "calXMax", 3900 );
+                    touchYMin = prefs.getInt( "calYMin",  200 );
+                    touchYMax = prefs.getInt( "calYMax", 3900 );
+                }
+                prefs.end();
                 tft.setRotation( displayFlipped ? 3 : 1 );
-                ts.setRotation( displayFlipped ? 3 : 1 );
                 tft.fillScreen( getBgColor() );
                 drawGraphicsScreen();
                 delay( TOUCH_DEBOUNCE_MS );

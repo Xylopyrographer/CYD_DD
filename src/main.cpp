@@ -202,10 +202,14 @@ bool keyboardNumbers = false;
 bool keyboardShift = false;
 bool showPassword = false; // Default: password is hidden (asterisks)
 
-int touchXMin = 200;   // Calibratable; overridden from NVS if saved
+int touchXMin = 200;    // Normal orientation cal — overridden from NVS if saved
 int touchXMax = 3900;
 int touchYMin = 200;
 int touchYMax = 3900;
+int touchXMinF = 3900;  // Flipped orientation cal defaults (axes reversed relative to normal)
+int touchXMaxF = 200;
+int touchYMinF = 3900;
+int touchYMaxF = 200;
 const int SCREEN_WIDTH  = 320;
 const int SCREEN_HEIGHT = 240;
 constexpr float DEGTORAD = ( float )( PI / 180.0 ); // Degrees to radians conversion
@@ -256,11 +260,19 @@ void setup() {
         autoDimEnd = prefs.getInt( "autoDimEnd", 6 );
         autoDimLevel = prefs.getInt( "autoDimLevel", 20 );
 
-        // Load touch calibration (if user has calibrated; otherwise keep defaults)
-        touchXMin = prefs.getInt( "calXMin", touchXMin );
-        touchXMax = prefs.getInt( "calXMax", touchXMax );
-        touchYMin = prefs.getInt( "calYMin", touchYMin );
-        touchYMax = prefs.getInt( "calYMax", touchYMax );
+        // Load touch calibration for the active orientation
+        if ( displayFlipped ) {
+            touchXMin = prefs.getInt( "calXMinF", 3900 );
+            touchXMax = prefs.getInt( "calXMaxF",  200 );
+            touchYMin = prefs.getInt( "calYMinF", 3900 );
+            touchYMax = prefs.getInt( "calYMaxF",  200 );
+        }
+        else {
+            touchXMin = prefs.getInt( "calXMin",  200 );
+            touchXMax = prefs.getInt( "calXMax", 3900 );
+            touchYMin = prefs.getInt( "calYMin",  200 );
+            touchYMax = prefs.getInt( "calYMax", 3900 );
+        }
 
         // FIX: Load temperature unit setting (°C / °F)
         weatherUnitF = prefs.getBool( "weatherUnitF", false );
@@ -293,7 +305,7 @@ void setup() {
     // ===== TOUCHSCREEN INITIALIZATION =====
     SPI.begin( T_CLK, T_DOUT, T_DIN );
     ts.begin();
-    ts.setRotation( displayFlipped ? 3 : 1 );
+    ts.setRotation( 1 ); // Always 1 — coordinate mirroring for flip is handled by the loop-level map() min/max swap
 
     log_d( "[SETUP] Touchscreen initialized" );
 
@@ -403,12 +415,9 @@ void loop() {
         lastTouchTime = millis();
 
         TS_Point p = ts.getPoint();
-        int x = displayFlipped
-            ? map( p.x, touchXMax, touchXMin, 0, SCREEN_WIDTH  )
-            : map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH  );
-        int y = displayFlipped
-            ? map( p.y, touchYMax, touchYMin, 0, SCREEN_HEIGHT )
-            : map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
+        // Cal values already encode orientation (flipped set has min/max reversed)
+        int x = map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH  );
+        int y = map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
         x = constrain( x, 0, SCREEN_WIDTH - 1 );
         y = constrain( y, 0, SCREEN_HEIGHT - 1 );
 

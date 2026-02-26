@@ -96,6 +96,10 @@ extern int touchXMin;
 extern int touchXMax;
 extern int touchYMin;
 extern int touchYMax;
+extern int touchXMinF;
+extern int touchXMaxF;
+extern int touchYMinF;
+extern int touchYMaxF;
 extern bool invertColors;
 extern bool displayFlipped;
 
@@ -257,12 +261,20 @@ void runTouchCalibration() {
     touchYMin = newYMin;
     touchYMax = newYMax;
 
-    // --- Persist to NVS ---
+    // --- Persist to NVS in orientation-specific keyset ---
     prefs.begin( "sys", false );
-    prefs.putInt( "calXMin", newXMin );
-    prefs.putInt( "calXMax", newXMax );
-    prefs.putInt( "calYMin", newYMin );
-    prefs.putInt( "calYMax", newYMax );
+    if ( displayFlipped ) {
+        prefs.putInt( "calXMinF", newXMin );
+        prefs.putInt( "calXMaxF", newXMax );
+        prefs.putInt( "calYMinF", newYMin );
+        prefs.putInt( "calYMaxF", newYMax );
+    }
+    else {
+        prefs.putInt( "calXMin",  newXMin );
+        prefs.putInt( "calXMax",  newXMax );
+        prefs.putInt( "calYMin",  newYMin );
+        prefs.putInt( "calYMax",  newYMax );
+    }
     prefs.end();
 
     // --- Done ---
