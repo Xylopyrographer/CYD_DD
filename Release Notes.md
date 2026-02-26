@@ -2,6 +2,16 @@
 
 ---
 
+## v1.0.4 — 2026-02-25
+
+### New Features
+
+- **180° display rotation** — A new *Display Orientation* toggle (NRM / FLP) has been added to the Graphics settings screen. Selecting FLP rotates the display 180° so the device can be mounted upside-down; selecting NRM returns it to the normal orientation. The chosen orientation is persisted across reboots.
+
+- **Per-orientation touch calibration** — Touch calibration is stored independently for each orientation. Separate NVS key-sets (`calXMin` / `calXMinF` etc.) hold normal and flipped calibration data with sensible uncalibrated defaults, so touch is accurate immediately after a flip without requiring a recalibration run. Running *Calibrate Touch* while in either orientation saves only the active orientation's calibration, leaving the other untouched.
+
+---
+
 ## v1.0.3 — 2026-02-25
 
 ### Bug Fixes
