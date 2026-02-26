@@ -344,6 +344,7 @@ void setup() {
         if ( WiFi.status() == WL_CONNECTED ) {
             log_i( "[SETUP] WiFi connected successfully" );
             showWifiResultScreen( true );
+            drawLoadingScreen( 0 );   // Show loading screen immediately while NTP syncs
 
             if ( regionAutoMode ) {
                 log_d( "[SETUP] Auto-sync enabled, syncing region..." );
@@ -490,6 +491,16 @@ void loop() {
                 drawSettingsIcon( TFT_SKYBLUE );
                 drawWifiIndicator();
                 drawUpdateIndicator();
+            }
+        }
+        else if ( lastSec == -1 ) {
+            // NTP not yet synced — animate loading spinner while time.h waits for SNTP
+            static int           spinFrame = 0;
+            static unsigned long lastSpinMs = 0;
+            if ( millis() - lastSpinMs >= 200 ) {
+                drawLoadingScreen( spinFrame );
+                spinFrame = ( spinFrame + 1 ) % 8;
+                lastSpinMs = millis();
             }
         }
 

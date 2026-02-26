@@ -127,6 +127,24 @@ void   syncRegion();
 
 // ---------------------------------------------------------------------------
 
+// ================= LOADING SCREEN =================
+// Shows "Loading information. / One moment..." centred on screen with an
+// animated spinner character (| / - \) below.  Called from loop() while
+// waiting for NTP to sync on first boot.
+void drawLoadingScreen( int frame ) {
+    static const char spinChars[] = { '|', '/', '-', '\\', '|', '/', '-', '\\' };
+    uint16_t bg = getBgColor();
+    uint16_t fg = getTextColor();
+    tft.fillScreen( bg );
+    tft.setTextDatum( MC_DATUM );
+    tft.setTextColor( fg );
+    tft.drawString( "Loading information.", 160, 100, 2 );
+    tft.drawString( "One moment...", 160, 130, 2 );
+    char spin[ 2 ] = { spinChars[ frame % 8 ], '\0' };
+    tft.setTextColor( TFT_SKYBLUE );
+    tft.drawString( spin, 160, 170, 4 );
+}
+
 void showWifiConnectingScreen( String ssid ) {
     tft.fillScreen( getBgColor() );
     tft.setTextColor( getTextColor() );

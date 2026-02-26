@@ -7,9 +7,10 @@
 int  getMenuItemY( int itemIndex );
 bool isTouchInMenuItem( int y, int itemIndex );
 
-// --- WiFi screens ---
+// --- WiFi / startup screens ---
 void showWifiConnectingScreen( String ssid );
 void showWifiResultScreen( bool success );
+void drawLoadingScreen( int frame );   // Animated loading screen; frame 0-7 cycles  | / - |
 void scanWifiNetworks();
 
 // --- Touch calibration ---
