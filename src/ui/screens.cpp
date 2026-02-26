@@ -702,7 +702,9 @@ void drawCountrySelection() {
         tft.drawFastHLine( 10, yPos + 20, 240, TFT_DARKGREY );
     }
 
+    tft.setTextColor( TFT_BLUE );
     tft.drawString( "Custom lookup", 15, 70 + 5 * 30, 2 );
+    tft.setTextColor( getTextColor() );
 
     if ( countryOffset > 0 ) {
         drawArrowUp( 265, 45, ( themeMode == THEME_BLUE ) ? yellowLight : TFT_BLUE );
