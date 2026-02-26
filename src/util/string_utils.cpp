@@ -107,5 +107,44 @@ String countryToISO( String country ) {
     if ( country.indexOf( "united kingdom" ) >= 0 ) {
         return "GB";
     }
-    return "US";
+    if ( country.indexOf( "canada" ) >= 0 ) {
+        return "CA";
+    }
+    if ( country.indexOf( "australia" ) >= 0 ) {
+        return "AU";
+    }
+    if ( country.indexOf( "netherlands" ) >= 0 ) {
+        return "NL";
+    }
+    if ( country.indexOf( "belgium" ) >= 0 ) {
+        return "BE";
+    }
+    if ( country.indexOf( "switzerland" ) >= 0 ) {
+        return "CH";
+    }
+    if ( country.indexOf( "sweden" ) >= 0 ) {
+        return "SE";
+    }
+    if ( country.indexOf( "norway" ) >= 0 ) {
+        return "NO";
+    }
+    if ( country.indexOf( "denmark" ) >= 0 ) {
+        return "DK";
+    }
+    if ( country.indexOf( "finland" ) >= 0 ) {
+        return "FI";
+    }
+    if ( country.indexOf( "portugal" ) >= 0 ) {
+        return "PT";
+    }
+    if ( country.indexOf( "hungary" ) >= 0 ) {
+        return "HU";
+    }
+    if ( country.indexOf( "romania" ) >= 0 ) {
+        return "RO";
+    }
+    if ( country.indexOf( "greece" ) >= 0 ) {
+        return "GR";
+    }
+    return "";   // Unsupported country — caller should skip holiday lookup
 }
