@@ -2,6 +2,22 @@
 
 ---
 
+## v1.0.5 — 2026-02-26
+
+### New Features
+
+- **Public holiday display** — The clock face now shows today's public holiday name at the bottom of the date line (below the date/week row). Holidays are fetched from the [Nager.Date](https://date.nager.at) public API (free, no API key required) using a two-step HTTPS sequence: a fast yes/no check followed by the full holiday list for the year. The holiday name is shown in red (dark / blue themes) or dark-green (yellow / white themes). If no holiday applies the line is blank. Country ISO code is resolved automatically from the selected country and cached in NVS so the REST lookup is only performed once.
+
+- **WiFi "Other…" always visible** — The *Other…* option in the WiFi selection screen is now permanently pinned at the bottom of the visible list rather than appearing only after scrolling to the end of the network list. Up to five scanned networks are shown in the scrollable area above it; the down arrow only appears when more than five networks were found.
+
+- **Consistent action-item colour** — *Other…* (WiFi selection) and *Custom lookup* (country selection) are both rendered in blue to visually distinguish them from regular list entries and signal their shared role as keyboard-entry shortcuts.
+
+### Build & Tooling
+
+- **`[env:clean]` build environment** — A third PlatformIO environment (`[env:clean]`) is now available alongside `release` and `debug`. It sets `CORE_DEBUG_LEVEL=0` (all log macros compiled out) with `-Os` optimisation, producing the smallest possible binary (~62% Flash vs ~65% for `release`). Useful for checking available headroom before adding large features.
+
+---
+
 ## v1.0.4 — 2026-02-25
 
 ### New Features

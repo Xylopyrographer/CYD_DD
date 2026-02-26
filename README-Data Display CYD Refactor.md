@@ -3,7 +3,7 @@
 Describes major changes made to the code base against DataDisplayCYD.ino version 1.4.1.
 
 Date: 2026-02-25  
-Last updated: 2026-02-26 (`calendar` branch)
+Last updated: 2026-02-26 (v1.0.5)
 
 ---
 
