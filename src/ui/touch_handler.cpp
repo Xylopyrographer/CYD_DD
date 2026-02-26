@@ -149,9 +149,6 @@ bool   lookupCityGeonames( String cityName, String countryHint );
 void   getCountryCities( String countryName, String cities[], int &count );
 String obfuscatePassword( const String &plain );
 void   syncRegion();
-void   addToRecentCities( String city, String country, String timezone,
-                          int gmtOffset, int dstOffset );
-
 // ---------------------------------------------------------------------------
 void handleTouch( int x, int y ) {
     switch ( currentState ) {

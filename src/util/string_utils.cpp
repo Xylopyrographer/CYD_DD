@@ -30,47 +30,4 @@ bool fuzzyMatch( String input, String target ) {
     return false;
 }
 
-String removeDiacritics( String input ) {
-    String output = input;
-    // Lowercase letters
-    output.replace( "á", "a" );
-    output.replace( "č", "c" );
-    output.replace( "ď", "d" );
-    output.replace( "é", "e" );
-    output.replace( "ě", "e" );
-    output.replace( "í", "i" );
-    output.replace( "ľ", "l" );
-    output.replace( "ĺ", "l" );
-    output.replace( "ň", "n" );
-    output.replace( "ó", "o" );
-    output.replace( "ô", "o" );
-    output.replace( "ř", "r" );
-    output.replace( "š", "s" );
-    output.replace( "ť", "t" );
-    output.replace( "ú", "u" );
-    output.replace( "ů", "u" );
-    output.replace( "ý", "y" );
-    output.replace( "ž", "z" );
 
-    // Uppercase letters
-    output.replace( "Á", "A" );
-    output.replace( "Č", "C" );
-    output.replace( "Ď", "D" );
-    output.replace( "É", "E" );
-    output.replace( "Ě", "E" );
-    output.replace( "Í", "I" );
-    output.replace( "Ľ", "L" );
-    output.replace( "Ĺ", "L" );
-    output.replace( "Ň", "N" );
-    output.replace( "Ó", "O" );
-    output.replace( "Ô", "O" );
-    output.replace( "Ř", "R" );
-    output.replace( "Š", "S" );
-    output.replace( "Ť", "T" );
-    output.replace( "Ú", "U" );
-    output.replace( "Ů", "U" );
-    output.replace( "Ý", "Y" );
-    output.replace( "Ž", "Z" );
-
-    return output;
-}

@@ -407,33 +407,4 @@ void drawDegreeCircle( int x, int y, int r, uint16_t color ) {
     }
 }
 
-// ================= SUNRISE / SUNSET ICONS =================
-void drawSunriseIcon( int x, int y, uint16_t color ) {
-    tft.fillCircle( x + 8, y + 2, 4, color );
-    tft.drawLine( x + 8, y - 3, x + 8, y - 5, color );
-    tft.drawLine( x + 8, y + 7, x + 8, y + 9, color );
-    tft.drawLine( x + 3, y + 2, x + 1, y + 2, color );
-    tft.drawLine( x + 13, y + 2, x + 15, y + 2, color );
-    tft.drawLine( x + 5, y - 1, x + 3, y - 3, color );
-    tft.drawLine( x + 11, y - 1, x + 13, y - 3, color );
-    tft.drawLine( x + 2, y + 10, x + 6, y + 10, color );
-    tft.drawLine( x + 10, y + 10, x + 14, y + 10, color );
-    tft.drawLine( x + 4, y + 11, x + 5, y + 12, color );
-    tft.drawLine( x + 11, y + 11, x + 12, y + 12, color );
-    tft.drawLine( x + 6, y + 11, x + 10, y + 11, color );
-}
 
-void drawSunsetIcon( int x, int y, uint16_t color ) {
-    tft.drawLine( x + 2, y, x + 6, y, color );
-    tft.drawLine( x + 10, y, x + 14, y, color );
-    tft.drawLine( x + 4, y - 1, x + 5, y - 2, color );
-    tft.drawLine( x + 11, y - 1, x + 12, y - 2, color );
-    tft.drawLine( x + 6, y - 1, x + 10, y - 1, color );
-    tft.fillCircle( x + 8, y + 10, 4, color );
-    tft.drawLine( x + 8, y + 5, x + 8, y + 3, color );
-    tft.drawLine( x + 8, y + 17, x + 8, y + 19, color );
-    tft.drawLine( x + 3, y + 10, x + 1, y + 10, color );
-    tft.drawLine( x + 13, y + 10, x + 15, y + 10, color );
-    tft.drawLine( x + 5, y + 9, x + 3, y + 7, color );
-    tft.drawLine( x + 11, y + 9, x + 13, y + 7, color );
-}

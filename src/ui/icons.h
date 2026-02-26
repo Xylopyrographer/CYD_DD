@@ -22,5 +22,3 @@ void drawArrowUp( int x, int y, uint16_t color );
 // --- Drawing primitives ---
 void fillGradientVertical( int x, int y, int w, int h, uint16_t colorTop, uint16_t colorBottom );
 void drawDegreeCircle( int x, int y, int r, uint16_t color );
-void drawSunriseIcon( int x, int y, uint16_t color );
-void drawSunsetIcon( int x, int y, uint16_t color );
