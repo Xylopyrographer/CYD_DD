@@ -6,7 +6,6 @@
 #include <time.h>
 
 #include "../util/constants.h"
-#include "../util/string_utils.h"
 
 // ── Globals defined here ───────────────────────────────────────────────────
 String todayHoliday   = "";
@@ -14,7 +13,7 @@ int    lastHolidayDay  = -1;
 bool   holidayValid    = false;
 
 // ── External globals owned by main.cpp ────────────────────────────────────
-extern String selectedCountry;
+extern String lookupISOCode;     // ISO 3166-1 alpha-2, set by lookupCountryEmbedded/REST
 extern int    lookupGmtOffset;   // UTC offset in seconds (from timezone detect)
 extern bool   forceClockRedraw;
 
@@ -157,8 +156,8 @@ void handleHolidayUpdate() {
 
     lastHolidayDay = today;
 
-    // ISO country code — empty string means unsupported / unknown
-    String isoCode = countryToISO( selectedCountry );
+    // ISO country code set by lookupCountryEmbedded() or lookupCountryRESTAPI()
+    String isoCode = lookupISOCode;
 
     // UTC offset in whole hours
     int offsetHours = lookupGmtOffset / 3600;
