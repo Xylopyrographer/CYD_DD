@@ -20,7 +20,12 @@ extern bool   forceClockRedraw;
 // ── Internal helpers ───────────────────────────────────────────────────────
 
 // Build "YYYY-MM-DD" for today in local time.
+// When HOLIDAY_TEST_DATE is defined (e.g. "2026-12-25") it is returned
+// unconditionally — allows testing the full holiday path on any day.
 static String todayDateString() {
+    #ifdef HOLIDAY_TEST_DATE
+    return String( HOLIDAY_TEST_DATE );
+    #else
     time_t     now      = time( nullptr );
     struct tm *timeinfo = localtime( &now );
     if ( !timeinfo ) {
@@ -32,6 +37,7 @@ static String todayDateString() {
               timeinfo->tm_mon + 1,
               timeinfo->tm_mday );
     return String( buf );
+    #endif
 }
 
 // ── Public functions ───────────────────────────────────────────────────────
@@ -43,10 +49,13 @@ String fetchTodayHoliday( const String &isoCode, int utcOffsetHours ) {
     }
 
     HTTPClient http;
-    http.setTimeout( HTTP_TIMEOUT_SHORT );
 
+    #ifndef HOLIDAY_TEST_DATE
     // ── Step 1: Is today a public holiday? ────────────────────────────────
-    // Returns 200=yes, 204=no, 404=unsupported country
+    // Returns 200=yes, 204=no, 404=unsupported country.
+    // Skipped when HOLIDAY_TEST_DATE is defined because the API checks the
+    // server's real date, not the injected test date.
+    http.setTimeout( HTTP_TIMEOUT_SHORT );
     String checkUrl = "https://date.nager.at/api/v3/IsTodayPublicHoliday/" + isoCode +
                       "?offset=" + String( utcOffsetHours );
     log_d( "[HOLIDAY] Checking: %s", checkUrl.c_str() );
@@ -64,16 +73,23 @@ String fetchTodayHoliday( const String &isoCode, int utcOffsetHours ) {
         log_w( "[HOLIDAY] Unexpected status %d for country %s", checkCode, isoCode.c_str() );
         return "";
     }
+    #else
+    log_i( "[HOLIDAY] TEST MODE — date injected: %s", HOLIDAY_TEST_DATE );
+    #endif
 
     // ── Step 2: Fetch the year list and find today's localName ────────────
+    String today = todayDateString();
+    #ifdef HOLIDAY_TEST_DATE
+    // Extract year directly from the injected date string (e.g. "2026-12-25" → 2026)
+    int year = today.substring( 0, 4 ).toInt();
+    #else
     time_t     now      = time( nullptr );
     struct tm *timeinfo = localtime( &now );
     if ( !timeinfo ) {
         return "";
     }
-
-    int    year    = timeinfo->tm_year + 1900;
-    String today   = todayDateString();
+    int year = timeinfo->tm_year + 1900;
+    #endif
 
     String listUrl = "https://date.nager.at/api/v3/PublicHolidays/" + String( year ) + "/" + isoCode;
     log_d( "[HOLIDAY] Fetching year list: %s", listUrl.c_str() );
