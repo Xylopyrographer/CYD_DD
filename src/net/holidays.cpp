@@ -3,9 +3,11 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 #include <time.h>
 
 #include "../util/constants.h"
+#include "../net/location.h"
 
 // ── Globals defined here ───────────────────────────────────────────────────
 String todayHoliday   = "";
@@ -14,6 +16,8 @@ bool   holidayValid    = false;
 
 // ── External globals owned by main.cpp ────────────────────────────────────
 extern String lookupISOCode;     // ISO 3166-1 alpha-2, set by lookupCountryEmbedded/REST
+extern String selectedCountry;   // Used for one-time ISO fallback when NVS has no isoCode
+extern Preferences prefs;        // Shared NVS handle defined in main.cpp
 extern int    lookupGmtOffset;   // UTC offset in seconds (from timezone detect)
 extern bool   forceClockRedraw;
 
@@ -172,7 +176,20 @@ void handleHolidayUpdate() {
 
     lastHolidayDay = today;
 
-    // ISO country code set by lookupCountryEmbedded() or lookupCountryRESTAPI()
+    // ISO country code set by lookupCountryEmbedded() or lookupCountryRESTAPI().
+    // On first boot after firmware update the NVS key may be absent — try once
+    // via REST while WiFi is already connected rather than silently skipping.
+    if ( lookupISOCode.isEmpty() && !selectedCountry.isEmpty() ) {
+        log_i( "[HOLIDAY] lookupISOCode empty — REST fallback for '%s'", selectedCountry.c_str() );
+        lookupCountryGeonames( selectedCountry );
+        // Persist so subsequent boots don't repeat the REST call
+        if ( !lookupISOCode.isEmpty() ) {
+            prefs.begin( "sys", false );
+            prefs.putString( "isoCode", lookupISOCode );
+            prefs.end();
+            log_i( "[HOLIDAY] Persisted isoCode '%s' to NVS", lookupISOCode.c_str() );
+        }
+    }
     String isoCode = lookupISOCode;
 
     // UTC offset in whole hours

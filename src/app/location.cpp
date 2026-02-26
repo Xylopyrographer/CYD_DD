@@ -11,6 +11,7 @@
 #include "../data/nameday.h"
 #include "../net/location.h"
 #include "../net/timezone.h"
+#include "../net/holidays.h"
 
 // Externs defined in main.cpp
 extern ScreenState currentState;
@@ -29,6 +30,7 @@ extern float  lon;
 extern float  lookupLat;
 extern float  lookupLon;
 extern String lookupCountry;
+extern String lookupISOCode;
 extern String lookupCity;
 extern String lookupTimezone;
 extern int    lookupGmtOffset;
@@ -235,6 +237,7 @@ void applyLocation() {
     prefs.putString( "posixTZ", posixTZ );
     prefs.putInt( "gmt", gmtOffset_sec );
     prefs.putInt( "dst", daylightOffset_sec );
+    prefs.putString( "isoCode", lookupISOCode );
 
     // ALSO SAVE COORDINATES (now 0.0 so weather update will fetch correct ones next time)
     prefs.putFloat( "lat", lat );
@@ -247,6 +250,8 @@ void applyLocation() {
     lastWeatherUpdate = 0; // Force weather update
     lastNamedayDay = -1; // Force nameday update on location change
     handleNamedayUpdate(); // Update nameday immediately after location change
+    lastHolidayDay = -1; // Force holiday update on location change
+    handleHolidayUpdate(); // Update holiday immediately after location change
 }
 
 void loadSavedLocation() {
@@ -256,6 +261,7 @@ void loadSavedLocation() {
     String savedCity = prefs.getString( "city", "" );
     selectedTimezone = prefs.getString( "timezone", "" );
     posixTZ = prefs.getString( "posixTZ", "CET-1CEST,M3.5.0,M10.5.0/3" );
+    lookupISOCode = prefs.getString( "isoCode", "" );  // Persisted ISO code — avoids REST lookup on boot
 
     // FIX: Unified key names with applyLocation ("gmt" instead of "gmtOffset")
     gmtOffset_sec = prefs.getInt( "gmt", 3600 );
@@ -271,6 +277,9 @@ void loadSavedLocation() {
         cityName = savedCity;
         selectedCity = savedCity;
         selectedCountry = savedCountry;
+        // Populate lookupISOCode from the embedded table so holiday lookup
+        // works on the first run without waiting for a new country selection.
+        lookupCountryEmbedded( savedCountry );
         // Sanity check: if country is Czech Republic but timezone is non-European,
         // the value was the old hardcoded default and should not be used.
         if ( selectedCountry == "Czech Republic" &&
