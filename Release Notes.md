@@ -6,15 +6,15 @@
 
 ### New Features
 
-- **Public holiday display** — The clock face now shows today's public holiday name at the bottom of the date line (below the date/week row). Holidays are fetched from the [Nager.Date](https://date.nager.at) public API (free, no API key required) using a two-step HTTPS sequence: a fast yes/no check followed by the full holiday list for the year. The holiday name is shown in red (dark / blue themes) or dark-green (yellow / white themes). If no holiday applies the line is blank. Country ISO code is resolved automatically from the selected country and cached in NVS so the REST lookup is only performed once.
+- **Public holiday display** — The clock face now shows today's public holiday name beneath the date (in place of the Czech nameday when a holiday applies). Holidays are fetched from the free [Nager.Date](https://date.nager.at) API using the country selected in Regional settings. A two-step sequence minimises bandwidth: a quick yes/no check runs first; the full holiday list is only fetched when today is confirmed as a holiday. Regional (non-global) holidays are excluded. The ISO 3166-1 country code is resolved automatically from the selected country and cached in NVS so the lookup runs only once per device.
 
-- **WiFi "Other…" always visible** — The *Other…* option in the WiFi selection screen is now permanently pinned at the bottom of the visible list rather than appearing only after scrolling to the end of the network list. Up to five scanned networks are shown in the scrollable area above it; the down arrow only appears when more than five networks were found.
+- **"Other…" always visible in WiFi scan list** — The *Other…* option for entering a WiFi network name manually is now permanently pinned at the bottom of the WiFi selection screen. Previously it appeared only after scrolling past all scanned networks; it is now always visible regardless of scroll position.
 
-- **Consistent action-item colour** — *Other…* (WiFi selection) and *Custom lookup* (country selection) are both rendered in blue to visually distinguish them from regular list entries and signal their shared role as keyboard-entry shortcuts.
+- **Consistent action-item colour** — Both *Other…* (WiFi list) and *Custom lookup* (country selection) are now rendered in blue to visually distinguish them from regular list entries and indicate that they open a free-text keyboard entry flow.
 
 ### Build & Tooling
 
-- **`[env:clean]` build environment** — A third PlatformIO environment (`[env:clean]`) is now available alongside `release` and `debug`. It sets `CORE_DEBUG_LEVEL=0` (all log macros compiled out) with `-Os` optimisation, producing the smallest possible binary (~62% Flash vs ~65% for `release`). Useful for checking available headroom before adding large features.
+- **`[env:clean]` build environment** — A third PlatformIO build environment has been added to `platformio.ini`. `[env:clean]` compiles with `CORE_DEBUG_LEVEL=0` (all log macros removed) and `-Os`, producing the smallest possible binary — useful for checking available flash headroom.
 
 ---
 
