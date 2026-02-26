@@ -36,6 +36,7 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 #include "net/location.h"
 #include "net/ota.h"
 #include "net/timezone.h"
+#include "net/holidays.h"
 #include "net/weather_api.h"
 #include "ui/clock_face.h"
 #include "ui/icons.h"
@@ -361,6 +362,7 @@ void setup() {
             lastSec = -1;  // Force full redraw in loop()
 
             handleNamedayUpdate();
+            handleHolidayUpdate();
         }
         else {
             log_w( "[SETUP] WiFi connection failed" );
@@ -381,6 +383,7 @@ void setup() {
 }
 
 // getNamedayForDate() and handleNamedayUpdate() moved to src/data/nameday.cpp
+// fetchTodayHoliday() and handleHolidayUpdate() moved to src/net/holidays.cpp
 
 
 void loop() {
@@ -448,6 +451,7 @@ void loop() {
 
                     forceClockRedraw = true;
                     handleNamedayUpdate();
+                    handleHolidayUpdate();
 
                     // drawClockFace() / drawClockStatic() removed: the sprite in
                     // updateHands() redraws border + ticks + numbers + hands atomically,
@@ -480,6 +484,7 @@ void loop() {
             if ( ti.tm_mday != lastDay ) {
                 lastDay = ti.tm_mday;
                 handleNamedayUpdate();
+                handleHolidayUpdate();
                 drawDateAndWeek( &ti );
                 drawSettingsIcon( TFT_SKYBLUE );
                 drawWifiIndicator();
