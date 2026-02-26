@@ -7,6 +7,7 @@
 
 #include "../data/app_state.h"
 #include "../data/nameday.h"
+#include "../net/holidays.h"
 #include "../util/moon.h"
 #include "../util/constants.h"
 #include "../net/weather_api.h"
@@ -161,7 +162,19 @@ void drawDateAndWeek( const struct tm *ti ) {
         tft.drawString( cityName, clockX, 211, 2 );
     }
 
-    if ( namedayValid && todayNameday != "--" && selectedCountry == "Czech Republic" ) {
+    // Holiday line takes priority; nameday shown only for Czech Republic when no holiday
+    if ( holidayValid && todayHoliday.length() > 0 ) {
+        uint16_t holidayColor;
+        if ( themeMode == THEME_YELLOW ) {
+            holidayColor = 0x0220;                                  // dark green on yellow bg
+        }
+        else {
+            holidayColor = isWhiteTheme ? TFT_DARKGREEN : TFT_RED;  // red on dark themes
+        }
+        tft.setTextColor( holidayColor, getBgColor() );
+        tft.drawString( todayHoliday, clockX, 227, 1 );
+    }
+    else if ( namedayValid && todayNameday != "--" && selectedCountry == "Czech Republic" ) {
         uint16_t namedayColor;
         if ( themeMode == THEME_YELLOW ) {
             namedayColor = 0x0220;
@@ -171,6 +184,10 @@ void drawDateAndWeek( const struct tm *ti ) {
         }
         tft.setTextColor( namedayColor, getBgColor() );
         tft.drawString( "Nameday: " + todayNameday, clockX, 227, 1 );
+    }
+    else {
+        // Clear the line if neither applies (e.g. country changed)
+        tft.fillRect( 155, 220, 165, 17, getBgColor() );
     }
 }
 
