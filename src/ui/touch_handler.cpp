@@ -259,14 +259,15 @@ void handleTouch( int x, int y ) {
                 }
             }
             else if ( x >= 265 && x <= 315 && y >= 170 && y <= 220 ) {
-                if ( wifiOffset + 6 <= wifiCount ) {
+                if ( wifiOffset + 5 < wifiCount ) {
                     wifiOffset++;
                     drawInitialSetup();
                 }
             }
             else {
                 bool handled = false;
-                for ( int i = wifiOffset; i < wifiOffset + 6 && i < wifiCount; i++ ) {
+                // Only rows 0-4 are scrollable network entries; row 5 is the pinned "Other..."
+                for ( int i = wifiOffset; i < wifiOffset + 5 && i < wifiCount; i++ ) {
                     int idx = i - wifiOffset;
                     int yPos = 45 + idx * 30;
                     if ( y >= yPos && y <= yPos + 25 ) {
@@ -280,19 +281,16 @@ void handleTouch( int x, int y ) {
                         break;
                     }
                 }
-                // Check tap on "Other..." row
+                // Check tap on "Other..." row — always pinned at row 5
                 if ( !handled ) {
-                    int otherVisIdx = wifiCount - wifiOffset;
-                    if ( otherVisIdx >= 0 && otherVisIdx < 6 ) {
-                        int yPos = 45 + otherVisIdx * 30;
-                        if ( y >= yPos && y <= yPos + 25 ) {
-                            selectedSSID = "";
-                            currentState = SSID_INPUT;
-                            passwordBuffer = "";
-                            keyboardNumbers = false;
-                            keyboardShift = false;
-                            drawKeyboardScreen();
-                        }
+                    int yPos = 45 + 5 * 30;
+                    if ( y >= yPos && y <= yPos + 25 ) {
+                        selectedSSID = "";
+                        currentState = SSID_INPUT;
+                        passwordBuffer = "";
+                        keyboardNumbers = false;
+                        keyboardShift = false;
+                        drawKeyboardScreen();
                     }
                 }
             }

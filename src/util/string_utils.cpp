@@ -74,38 +74,3 @@ String removeDiacritics( String input ) {
 
     return output;
 }
-
-String countryToISO( String country ) {
-    country.toLowerCase();
-    if ( country.indexOf( "czech" ) >= 0 ) {
-        return "CZ";
-    }
-    if ( country.indexOf( "slovak" ) >= 0 ) {
-        return "SK";
-    }
-    if ( country.indexOf( "german" ) >= 0 ) {
-        return "DE";
-    }
-    if ( country.indexOf( "austria" ) >= 0 ) {
-        return "AT";
-    }
-    if ( country.indexOf( "poland" ) >= 0 ) {
-        return "PL";
-    }
-    if ( country.indexOf( "france" ) >= 0 ) {
-        return "FR";
-    }
-    if ( country.indexOf( "italy" ) >= 0 ) {
-        return "IT";
-    }
-    if ( country.indexOf( "spain" ) >= 0 ) {
-        return "ES";
-    }
-    if ( country.indexOf( "united states" ) >= 0 ) {
-        return "US";
-    }
-    if ( country.indexOf( "united kingdom" ) >= 0 ) {
-        return "GB";
-    }
-    return "US";
-}

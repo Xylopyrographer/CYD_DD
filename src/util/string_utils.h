@@ -14,4 +14,4 @@ String removeDiacritics( String input );
 
 // Maps a country name (English) to its two-letter ISO 3166-1 alpha-2 code.
 // Returns "US" for unrecognised names.
-String countryToISO( String country );
+
