@@ -1221,7 +1221,8 @@ void drawInitialSetup() {
         tft.drawString( "No networks found", 15, 45, 2 );
     }
     else {
-        for ( int i = wifiOffset; i < wifiOffset + 6 && i < wifiCount; i++ ) {
+        // Show up to 5 rows — row 5 is reserved for the pinned "Other..." entry
+        for ( int i = wifiOffset; i < wifiOffset + 5 && i < wifiCount; i++ ) {
             int idx = i - wifiOffset;
             String txt = wifiSSIDs[ i ];
             if ( txt.length() > 18 ) {
@@ -1232,14 +1233,11 @@ void drawInitialSetup() {
         }
     }
 
-    // Draw "Other..." entry after the scanned list if it is visible in the current page
-    int otherVisIdx = wifiCount - wifiOffset;  // visual row index of "Other..."
-    if ( otherVisIdx >= 0 && otherVisIdx < 6 ) {
-        tft.setTextColor( TFT_BLUE );
-        tft.drawString( "Other...", 15, 45 + otherVisIdx * 30, 2 );
-        tft.drawFastHLine( 10, 62 + otherVisIdx * 30, 240, TFT_DARKGREY );
-        tft.setTextColor( getTextColor() );
-    }
+    // "Other..." is always pinned at row 5 — visible regardless of scroll position
+    tft.setTextColor( TFT_BLUE );
+    tft.drawString( "Other...", 15, 45 + 5 * 30, 2 );
+    tft.drawFastHLine( 10, 62 + 5 * 30, 240, TFT_DARKGREY );
+    tft.setTextColor( getTextColor() );
 
     // Navigation arrows
     // Back arrow - only if we already have a saved WiFi (not in initial setup with no data)
@@ -1252,8 +1250,8 @@ void drawInitialSetup() {
         drawArrowUp( 265, 110, TFT_BLUE );
     }
 
-    // Down arrow – total list is wifiCount + 1 (includes "Other...")
-    if ( wifiOffset + 6 <= wifiCount ) {
+    // Down arrow — more networks exist above the pinned "Other..." row
+    if ( wifiOffset + 5 < wifiCount ) {
         drawArrowDown( 265, 170, TFT_BLUE );
     }
 }
