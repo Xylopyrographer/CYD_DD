@@ -64,6 +64,7 @@ bool isWhiteTheme = false;  // NOW IT'S HERE, SO EVERYONE CAN SEE IT
 bool isDigitalClock = false; // false = Analog, true = Digital
 bool is12hFormat = false;    // false = 24h, true = 12h
 bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with inverted displays
+bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
 const char *FIRMWARE_VERSION = "1.4.1";  // CURRENT VERSION
@@ -242,6 +243,7 @@ void setup() {
         themeMode = prefs.getInt( "themeMode", THEME_DARK );
         isWhiteTheme = prefs.getBool( "theme", false );
         invertColors = prefs.getBool( "invertColors", false );
+        displayFlipped = prefs.getBool( "dispFlip", false );
 
         // Load OTA settings
         otaInstallMode = prefs.getInt( "otaMode", 1 ); // Default: By user
@@ -272,7 +274,7 @@ void setup() {
 
     // ===== TFT LCD INITIALIZATION =====
     tft.init();
-    tft.setRotation( 1 );
+    tft.setRotation( displayFlipped ? 3 : 1 );
 
     // NOTE: ILI9341 (original CYD) does NOT have a hardware-inverted display.
     // invertColors=false → normal display, invertColors=true → inverted display.
@@ -291,7 +293,7 @@ void setup() {
     // ===== TOUCHSCREEN INITIALIZATION =====
     SPI.begin( T_CLK, T_DOUT, T_DIN );
     ts.begin();
-    ts.setRotation( 1 );
+    ts.setRotation( displayFlipped ? 3 : 1 );
 
     log_d( "[SETUP] Touchscreen initialized" );
 
@@ -401,8 +403,12 @@ void loop() {
         lastTouchTime = millis();
 
         TS_Point p = ts.getPoint();
-        int x = map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH );
-        int y = map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
+        int x = displayFlipped
+            ? map( p.x, touchXMax, touchXMin, 0, SCREEN_WIDTH  )
+            : map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH  );
+        int y = displayFlipped
+            ? map( p.y, touchYMax, touchYMin, 0, SCREEN_HEIGHT )
+            : map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
         x = constrain( x, 0, SCREEN_WIDTH - 1 );
         y = constrain( y, 0, SCREEN_HEIGHT - 1 );
 

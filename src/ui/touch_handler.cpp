@@ -1,3 +1,5 @@
+#include <XPT2046_Touchscreen.h>
+
 #include "touch_handler.h"
 #include "theme.h"
 #include "icons.h"
@@ -23,6 +25,7 @@
 // Externs — all defined in main.cpp
 // ---------------------------------------------------------------------------
 extern TFT_eSPI   tft;
+extern XPT2046_Touchscreen ts;
 extern bool       isWhiteTheme;
 extern int        themeMode;
 extern uint16_t   blueLight;
@@ -97,6 +100,7 @@ extern int        autoDimStart;
 extern int        autoDimEnd;
 extern int        autoDimLevel;
 extern bool       invertColors;
+extern bool       displayFlipped;
 extern int        autoDimEditMode;
 extern int        autoDimTempStart;
 extern int        autoDimTempEnd;
@@ -1191,6 +1195,21 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "digiClock", isDigitalClock );
                 prefs.end();
+                drawGraphicsScreen();
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
+
+            // === ROTATE 180° TOGGLE ===
+            // Matches draw region: rotX=200, rotY=148, rotW=110, rotH=22
+            if ( x >= 200 && x <= 310 && y >= 148 && y <= 170 ) {
+                displayFlipped = !displayFlipped;
+                prefs.begin( "sys", false );
+                prefs.putBool( "dispFlip", displayFlipped );
+                prefs.end();
+                tft.setRotation( displayFlipped ? 3 : 1 );
+                ts.setRotation( displayFlipped ? 3 : 1 );
+                tft.fillScreen( getBgColor() );
                 drawGraphicsScreen();
                 delay( TOUCH_DEBOUNCE_MS );
                 break;

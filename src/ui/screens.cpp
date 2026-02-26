@@ -97,6 +97,7 @@ extern int touchXMax;
 extern int touchYMin;
 extern int touchYMax;
 extern bool invertColors;
+extern bool displayFlipped;
 
 // State / prefs
 extern ScreenState currentState;
@@ -1037,6 +1038,30 @@ void drawGraphicsScreen() {
         tft.drawString( "ANA", swX + ( swW / 4 ), swY + ( swH / 2 ), 2 );
         tft.setTextColor( TFT_WHITE );
         tft.drawString( "DIGI", swX + ( 3 * swW / 4 ), swY + ( swH / 2 ), 2 );
+    }
+
+    // === ROTATE 180° TOGGLE ===
+    int rotX = 200;
+    int rotY = 148;
+    int rotW = 110;
+    int rotH = 22;
+
+    tft.drawRect( rotX, rotY, rotW, rotH, getTextColor() );
+    if ( !displayFlipped ) {
+        tft.fillRect( rotX + 2, rotY + 2, ( rotW / 2 ) - 2, rotH - 4, activeColor );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( TFT_WHITE );
+        tft.drawString( "NRM", rotX + ( rotW / 4 ), rotY + ( rotH / 2 ), 1 );
+        tft.setTextColor( getTextColor() );
+        tft.drawString( "FLP", rotX + ( 3 * rotW / 4 ), rotY + ( rotH / 2 ), 1 );
+    }
+    else {
+        tft.fillRect( rotX + ( rotW / 2 ), rotY + 2, ( rotW / 2 ) - 2, rotH - 4, activeColor );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( getTextColor() );
+        tft.drawString( "NRM", rotX + ( rotW / 4 ), rotY + ( rotH / 2 ), 1 );
+        tft.setTextColor( TFT_WHITE );
+        tft.drawString( "FLP", rotX + ( 3 * rotW / 4 ), rotY + ( rotH / 2 ), 1 );
     }
 
     // === AUTO DIM SETTINGS ===
