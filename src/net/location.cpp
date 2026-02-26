@@ -11,6 +11,7 @@
 
 // Externs defined in main.cpp
 extern String lookupCountry;
+extern String lookupISOCode;
 extern String lookupCity;
 extern String lookupTimezone;
 extern int    lookupGmtOffset;
@@ -33,7 +34,7 @@ bool lookupCountryRESTAPI( String countryName ) {
 
     String searchName = countryName;
     searchName.replace( " ", "%20" );
-    String url = "https://restcountries.com/v3.1/name/" + searchName + "?fullText=false";
+    String url = "https://restcountries.com/v3.1/name/" + searchName + "?fullText=false&fields=name,cca2";
     log_d( "[LOOKUP-REST] URL %s", url.c_str() );
 
     http.begin( url );
@@ -66,7 +67,10 @@ bool lookupCountryRESTAPI( String countryName ) {
                 JsonObject nameObj = first[ "name" ];
                 if ( nameObj[ "common" ].is<const char * >() ) {
                     lookupCountry = nameObj[ "common" ].as<String>();
-                    log_d( "[LOOKUP-REST] FOUND %s", lookupCountry.c_str() );
+                    lookupISOCode = first[ "cca2" ].is<const char *>()
+                                    ? first[ "cca2" ].as<String>()
+                                    : String( "" );
+                    log_d( "[LOOKUP-REST] FOUND %s (%s)", lookupCountry.c_str(), lookupISOCode.c_str() );
                     http.end();
                     return true;
                 }
@@ -85,7 +89,8 @@ bool lookupCountryEmbedded( String countryName ) {
     for ( int i = 0; i < COUNTRIES_COUNT; i++ ) {
         if ( fuzzyMatch( countryName, String( countries[ i ].name ) ) ) {
             lookupCountry = String( countries[ i ].name );
-            log_d( "[LOOKUP-EMB] FOUND %s", lookupCountry.c_str() );
+            lookupISOCode = String( countries[ i ].code );
+            log_d( "[LOOKUP-EMB] FOUND %s (%s)", lookupCountry.c_str(), lookupISOCode.c_str() );
             return true;
         }
     }

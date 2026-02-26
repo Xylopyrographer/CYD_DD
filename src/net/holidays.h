@@ -29,6 +29,6 @@ extern bool   holidayValid;    // true when todayHoliday holds a real name
 String fetchTodayHoliday( const String &isoCode, int utcOffsetHours );
 
 // Call once per loop iteration (or on demand) to refresh todayHoliday.
-// Uses selectedCountry → countryToISO() → fetchTodayHoliday().
+// Uses lookupISOCode (set by lookupCountryEmbedded/lookupCountryRESTAPI) → fetchTodayHoliday().
 // Updates once per day; sets forceClockRedraw = true when value changes.
 void handleHolidayUpdate();
