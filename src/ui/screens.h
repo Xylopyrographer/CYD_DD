@@ -16,6 +16,10 @@ void drawRegionalDstButton();   // Repaint only the DST toggle button (no fillSc
 void clearSyncOverlay();        // Erase sync overlay and restore the content beneath it
 void redrawBrightnessSlider();  // Repaint only the brightness slider (no fillScreen)
 void redrawAutoDimLevel();      // Repaint only the auto-dim level value (no fillScreen)
+void redrawAutoDimStart();      // Repaint only the auto-dim start time value
+void redrawAutoDimEnd();        // Repaint only the auto-dim end time value
+void redrawAutoDimSection();    // Repaint the entire auto-dim subpanel (no fillScreen)
+void redrawDigiAnaToggle();     // Repaint only the ANA/DIGI toggle widget
 void scanWifiNetworks();
 
 // --- Touch calibration ---
