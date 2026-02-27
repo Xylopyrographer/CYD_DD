@@ -332,15 +332,15 @@ void drawUpdateIndicator() {
     }
 
     // Erase previous icon footprint before drawing (handles redraws without a prior fillScreen)
-    tft.fillRect( 310, 12, 10, 17, getBgColor() );
+    tft.fillRect( 310, 14, 10, 12, getBgColor() );
 
     int iconX = 313;  // 4 px gap from WiFi circle right edge (x=309)
-    int iconY = 12;
+    int iconY = 15;   // Centres the 10px-tall icon at y=20 (matching WiFi circle centre)
 
-    // Upward-pointing filled triangle (6 px wide, 8 px tall)
-    tft.fillTriangle( iconX, iconY + 8, iconX + 3, iconY, iconX + 6, iconY + 8, TFT_GREEN );
-    // Stem extending down from triangle base (centred, 2 px wide, 6 px tall)
-    tft.fillRect( iconX + 2, iconY + 8, 2, 6, TFT_GREEN );
+    // Upward-pointing filled triangle (6 px wide, 5 px tall — less pointy)
+    tft.fillTriangle( iconX, iconY + 5, iconX + 3, iconY, iconX + 6, iconY + 5, TFT_GREEN );
+    // Stem extending down from triangle base (centred, 2 px wide, 5 px tall)
+    tft.fillRect( iconX + 2, iconY + 5, 2, 5, TFT_GREEN );
 }
 
 void drawSettingsIcon( uint16_t color ) {
