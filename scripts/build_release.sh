@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build release binaries for CYD_DataDisplay
+# Build release binaries for CYD_DataDisplay using [env:clean]
+# (CORE_DEBUG_LEVEL=0, -Os — smallest possible binary, all log macros removed)
 #
 # Produces in bin/:
 #   CYD_DataDisplay_v<version>_FULL.bin   — full flash image (Web Serial / esptool)
@@ -33,17 +34,17 @@ echo ""
 # ------------------------------------------------------------------
 # Release build
 # ------------------------------------------------------------------
-echo "1/2  Building [env:release] …"
+echo "1/2  Building [env:clean] …"
 echo "--------------------------------------------------"
 
 echo "  → Clean"
-pio run -e release -t clean
+pio run -e clean -t clean
 
 echo "  → Build + export FULL (merged) binary"
-pio run -e release -t merged
+pio run -e clean -t merged
 
 echo "  → Export OTA binary"
-pio run -e release -t ota
+pio run -e clean -t ota
 
 echo ""
 echo "=================================================="
