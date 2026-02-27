@@ -434,35 +434,27 @@ void loop() {
         struct tm ti;
         if ( getLocalTime( &ti ) ) {
             if ( ti.tm_sec != lastSec ) {
-                static bool initialRender = true;
                 if ( lastSec == -1 ) {
-                    // On the very first clock draw, keep the backlight off while
-                    // we fetch weather and build the full layout so nothing
-                    // partially-formed is ever visible.
-                    if ( initialRender ) {
-                        backlightSet( 0 );
+                    // Loading screen is still showing from setup().
+                    // Do all HTTP work first so it stays visible throughout,
+                    // then build the clock display in one pass — no flicker.
+                    forceClockRedraw = true;
+                    handleNamedayUpdate();
+                    handleHolidayUpdate();
+
+                    if ( lastWeatherUpdate == 0 && cityName != "" ) {
+                        weatherCity = cityName;
+                        fetchWeatherData();
+                        lastWeatherUpdate = millis();
                     }
 
+                    // Now clear and paint the final layout
                     tft.fillScreen( getBgColor() );
                     if ( themeMode == THEME_BLUE ) {
                         fillGradientVertical( 0, 0, 320, 240, blueDark, blueLight );
                     }
                     else if ( themeMode == THEME_YELLOW ) {
                         fillGradientVertical( 0, 0, 320, 240, yellowDark, yellowLight );
-                    }
-
-                    forceClockRedraw = true;
-                    handleNamedayUpdate();
-                    handleHolidayUpdate();
-
-                    // drawClockFace() / drawClockStatic() removed: the sprite in
-                    // updateHands() redraws border + ticks + numbers + hands atomically,
-                    // so drawing to TFT here is redundant and would erase the gradient.
-
-                    if ( lastWeatherUpdate == 0 && cityName != "" ) {
-                        weatherCity = cityName;
-                        fetchWeatherData();
-                        lastWeatherUpdate = millis();
                     }
 
                     drawWeatherSection();
@@ -473,10 +465,6 @@ void loop() {
                 }
 
                 updateHands( ti.tm_hour, ti.tm_min, ti.tm_sec );
-                if ( initialRender ) {
-                    backlightSet( brightness );   // Reveal the fully-formed display
-                    initialRender = false;
-                }
                 lastHour = ti.tm_hour;
                 lastMin  = ti.tm_min;
                 lastSec  = ti.tm_sec;
