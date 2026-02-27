@@ -1226,6 +1226,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();
+                    redrawAutoDimLevel();   // update the displayed value without a full redraw
                 }
                 // Throttle NVS writes to ≤1 per 500 ms — flash writes can stall the bus
                 static unsigned long lastNVSSaveBright = 0;

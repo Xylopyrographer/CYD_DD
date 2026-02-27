@@ -14,6 +14,8 @@ void drawLoadingScreen();              // Static loading screen shown while NTP 
 void drawSyncOverlay( const String &msg, bool okButton );  // Modal overlay for SYNC feedback
 void drawRegionalDstButton();   // Repaint only the DST toggle button (no fillScreen)
 void clearSyncOverlay();        // Erase sync overlay and restore the content beneath it
+void redrawBrightnessSlider();  // Repaint only the brightness slider (no fillScreen)
+void redrawAutoDimLevel();      // Repaint only the auto-dim level value (no fillScreen)
 void scanWifiNetworks();
 
 // --- Touch calibration ---
@@ -33,7 +35,6 @@ void drawCustomCityInput();
 void drawCustomCountryInput();
 void drawFirmwareScreen();
 void drawGraphicsScreen();
-void redrawBrightnessSlider();   // partial repaint — slider + % label only
 void drawInitialSetup();
 
 // --- Keyboard ---
