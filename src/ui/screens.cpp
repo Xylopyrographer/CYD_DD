@@ -502,9 +502,9 @@ int getMenuItemY( int itemIndex ) {
     return MENU_BASE_Y + itemIndex * MENU_ITEM_SPACING;
 }
 
-bool isTouchInMenuItem( int y, int itemIndex ) {
+bool isTouchInMenuItem( int x, int y, int itemIndex ) {
     int yPos = getMenuItemY( itemIndex );
-    return ( y >= yPos && y <= yPos + MENU_ITEM_HEIGHT );
+    return ( x >= 40 && x <= 220 && y >= yPos && y <= yPos + MENU_ITEM_HEIGHT );
 }
 
 void drawSettingsScreen() {

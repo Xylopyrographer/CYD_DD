@@ -5,7 +5,7 @@
 
 // --- Layout helpers ---
 int  getMenuItemY( int itemIndex );
-bool isTouchInMenuItem( int y, int itemIndex );
+bool isTouchInMenuItem( int x, int y, int itemIndex );
 
 // --- WiFi / startup screens ---
 void showWifiConnectingScreen( String ssid );
