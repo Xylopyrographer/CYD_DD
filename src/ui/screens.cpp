@@ -654,6 +654,38 @@ void drawWeatherScreen() {
     tft.drawString( "BACK TO SETTINGS", 160, 160, 1 );
 }
 
+// Repaint only the DST toggle button — avoids a full fillScreen redraw
+void drawRegionalDstButton() {
+    uint16_t bg = getBgColor();
+    tft.setTextDatum( MC_DATUM );
+    tft.fillRoundRect( 195, 172, 72, 16, 3, bg );   // erase previous state
+    if ( manualDstActive ) {
+        tft.fillRoundRect( 195, 172, 72, 16, 3, TFT_ORANGE );
+        tft.setTextColor( TFT_WHITE );
+    }
+    else {
+        tft.drawRoundRect( 195, 172, 72, 16, 3, getTextColor() );
+        tft.setTextColor( getTextColor() );
+    }
+    tft.drawString( manualDstActive ? "DST: ON" : "DST: OFF", 231, 180, 2 );
+}
+
+// Erase the sync overlay box and restore the Regional screen content beneath it
+void clearSyncOverlay() {
+    const int bx = 50, by = 80, bw = 220, bh = 90;
+    uint16_t bg  = getBgColor();
+    uint16_t txt = getTextColor();
+    tft.fillRoundRect( bx, by, bw, bh, 8, bg );    // erase overlay
+    // The overlay covers the city and timezone label rows — redraw them
+    tft.setTextDatum( ML_DATUM );
+    tft.setTextColor( txt );
+    tft.drawString( "City", 40, 110, 2 );
+    tft.setTextColor( TFT_SKYBLUE );
+    tft.drawString( cityName != "" ? cityName : "---", 40, 130, 2 );
+    tft.setTextColor( txt );
+    tft.drawString( "Timezone", 40, 160, 2 );
+}
+
 void drawRegionalScreen() {
     tft.fillScreen( getBgColor() );
     tft.setTextColor( getTextColor() );

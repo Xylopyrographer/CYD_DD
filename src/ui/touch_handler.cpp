@@ -750,7 +750,7 @@ void handleTouch( int x, int y ) {
                 prefs.putBool( "manualDst", manualDstActive );
                 prefs.putString( "posixTZ", posixTZ );
                 prefs.end();
-                drawRegionalScreen();
+                drawRegionalDstButton();
                 delay( UI_DEBOUNCE_MS );
             }
             else if ( x >= 40 && x <= 145 && y >= 205 && y <= 235 ) {
@@ -777,7 +777,7 @@ void handleTouch( int x, int y ) {
                         }
                         delay( UI_DEBOUNCE_MS );
                     }
-                    drawRegionalScreen();
+                    clearSyncOverlay();
                     // Stay on REGIONALCONFIG — user must explicitly navigate away
                 }
                 else {

@@ -12,6 +12,8 @@ void showWifiConnectingScreen( String ssid );
 void showWifiResultScreen( bool success );
 void drawLoadingScreen();              // Static loading screen shown while NTP syncs
 void drawSyncOverlay( const String &msg, bool okButton );  // Modal overlay for SYNC feedback
+void drawRegionalDstButton();   // Repaint only the DST toggle button (no fillScreen)
+void clearSyncOverlay();        // Erase sync overlay and restore the content beneath it
 void scanWifiNetworks();
 
 // --- Touch calibration ---
