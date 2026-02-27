@@ -1375,7 +1375,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimLevel();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }
@@ -1386,7 +1386,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimLevel();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }
