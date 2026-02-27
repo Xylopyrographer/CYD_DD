@@ -1260,6 +1260,18 @@ void drawGraphicsScreen() {
     tft.drawString( "<", backX + backSize / 2, backY + backSize / 2, 4 );
 }
 
+// Partial repaint: only the autoDimLevel value text — no fillScreen flash.
+void redrawAutoDimLevel() {
+    const int levelTimeX = 100;  // startX(50) + 50
+    const int levelY     = 210;  // onY(175) + 3 + 2*lineHeight(16)
+    uint16_t bg = getBgColor();
+    // Erase the old value (max "100%" at font 1 fits in ~30 x 10 px)
+    tft.fillRect( levelTimeX, levelY - 6, 35, 12, bg );
+    tft.setTextDatum( ML_DATUM );
+    tft.setTextColor( getTextColor() );
+    tft.drawString( String( autoDimLevel ) + "%", levelTimeX, levelY, 1 );
+}
+
 // Partial repaint: only the slider fill and percentage label — no fillScreen flash.
 void redrawBrightnessSlider() {
     const int sliderX      = 10;
