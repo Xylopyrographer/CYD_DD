@@ -1248,7 +1248,7 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "digiClock", isDigitalClock );
                 prefs.end();
-                drawGraphicsScreen();
+                redrawDigiAnaToggle();
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
@@ -1298,7 +1298,7 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "autoDimEnabled", autoDimEnabled );
                 prefs.end();
-                drawGraphicsScreen();
+                redrawAutoDimSection();
                 delay( UI_DEBOUNCE_MS );
                 break;
             }
@@ -1308,7 +1308,7 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "autoDimEnabled", autoDimEnabled );
                 prefs.end();
-                drawGraphicsScreen();
+                redrawAutoDimSection();
                 delay( UI_DEBOUNCE_MS );
                 break;
             }
@@ -1330,7 +1330,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimStart", autoDimStart );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimStart();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }
@@ -1339,7 +1339,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimStart", autoDimStart );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimStart();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }
@@ -1351,7 +1351,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimEnd", autoDimEnd );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimEnd();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }
@@ -1360,7 +1360,7 @@ void handleTouch( int x, int y ) {
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimEnd", autoDimEnd );
                     prefs.end();
-                    drawGraphicsScreen();
+                    redrawAutoDimEnd();
                     delay( UI_DEBOUNCE_MS );
                     break;
                 }

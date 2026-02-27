@@ -670,6 +670,116 @@ void drawRegionalDstButton() {
     tft.drawString( manualDstActive ? "DST: ON" : "DST: OFF", 231, 180, 2 );
 }
 
+void redrawAutoDimStart() {
+    const int timeX = 100;   // startX(50) + 50
+    const int timeY = 178;   // onY(175) + 3
+    tft.fillRect( timeX, timeY - 6, 35, 12, getBgColor() );
+    tft.setTextDatum( ML_DATUM );
+    tft.setTextColor( getTextColor() );
+    tft.drawString( String( autoDimStart ) + "h", timeX, timeY, 1 );
+}
+
+void redrawAutoDimEnd() {
+    const int timeX = 100;   // startX(50) + 50
+    const int timeY = 194;   // onY(175) + 3 + lineHeight(16)
+    tft.fillRect( timeX, timeY - 6, 35, 12, getBgColor() );
+    tft.setTextDatum( ML_DATUM );
+    tft.setTextColor( getTextColor() );
+    tft.drawString( String( autoDimEnd ) + "h", timeX, timeY, 1 );
+}
+
+void redrawAutoDimSection() {
+    // Clear the entire Auto Dim area (below the brightness/toggle rows)
+    const int areaX = 0, areaY = 150, areaW = 255, areaH = 75;
+    uint16_t bg  = getBgColor();
+    uint16_t txt = getTextColor();
+    tft.fillRect( areaX, areaY, areaW, areaH, bg );
+
+    tft.setTextDatum( ML_DATUM );
+    tft.setTextColor( txt );
+    tft.drawString( "Auto Dim", 10, 155, 2 );
+
+    // ON / OFF buttons
+    const int onX = 10, onY = 175, offX = 10, offY = 195;
+    const int btnW = 28, btnH = 16;
+    if ( autoDimEnabled ) {
+        tft.fillRoundRect( onX,  onY,  btnW, btnH, 3, TFT_GREEN );
+        tft.fillRoundRect( offX, offY, btnW, btnH, 3, TFT_BLUE );
+    }
+    else {
+        tft.fillRoundRect( onX,  onY,  btnW, btnH, 3, TFT_BLUE );
+        tft.fillRoundRect( offX, offY, btnW, btnH, 3, TFT_GREEN );
+    }
+    tft.setTextColor( TFT_WHITE );
+    tft.setTextDatum( MC_DATUM );
+    tft.drawString( "ON",  onX  + btnW / 2, onY  + btnH / 2, 1 );
+    tft.drawString( "OFF", offX + btnW / 2, offY + btnH / 2, 1 );
+
+    if ( autoDimEnabled ) {
+        const int startX = 50, startY = 178, lineH = 16, timeX = 100;
+        const int btnW16 = 16;
+        tft.setTextDatum( ML_DATUM );
+        tft.setTextColor( txt );
+        tft.drawString( "Start", startX, startY,        1 );
+        tft.drawString( String( autoDimStart ) + "h", timeX, startY, 1 );
+        int endY = startY + lineH;
+        tft.drawString( "End",   startX, endY,           1 );
+        tft.drawString( String( autoDimEnd )   + "h", timeX, endY,   1 );
+        int levelY = endY + lineH;
+        tft.drawString( "Level", startX, levelY,         1 );
+        tft.drawString( String( autoDimLevel ) + "%", timeX, levelY, 1 );
+        // redraw the +/- buttons
+        auto drawPlusBtn = [ & ]( int rx, int ry ) {
+            tft.drawRoundRect( rx, ry, btnW16, 12, 2, TFT_GREEN );
+            int cx = rx + btnW16 / 2, cy = ry + 6;
+            tft.drawFastHLine( cx - 3, cy, 7, TFT_GREEN );
+            tft.drawFastVLine( cx, cy - 3, 7, TFT_GREEN );
+        };
+        auto drawMinusBtn = [ & ]( int rx, int ry ) {
+            tft.drawRoundRect( rx, ry, btnW16, 12, 2, TFT_GREEN );
+            int cx = rx + btnW16 / 2, cy = ry + 6;
+            tft.drawFastHLine( cx - 3, cy, 7, TFT_GREEN );
+        };
+        int plusX  = timeX + 50;
+        drawPlusBtn(  plusX,      startY - 6 );
+        drawMinusBtn( plusX + 26, startY - 6 );
+        drawPlusBtn(  plusX,      endY   - 6 );
+        drawMinusBtn( plusX + 26, endY   - 6 );
+        drawPlusBtn(  plusX,      levelY - 6 );
+        drawMinusBtn( plusX + 26, levelY - 6 );
+    }
+}
+
+void redrawDigiAnaToggle() {
+    const int swX = 200, swY = 115, swW = 110, swH = 28;
+    uint16_t bg = getBgColor();
+    uint16_t activeColor = TFT_GREEN;
+    if ( themeMode == THEME_BLUE ) {
+        activeColor = blueLight;
+    }
+    if ( themeMode == THEME_YELLOW ) {
+        activeColor = yellowDark;
+    }
+    // Clear interior, keep the border rect
+    tft.fillRect( swX + 1, swY + 1, swW - 2, swH - 2, bg );
+    if ( !isDigitalClock ) {
+        tft.fillRect( swX + 2, swY + 2, ( swW / 2 ) - 2, swH - 4, activeColor );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( TFT_WHITE );
+        tft.drawString( "ANA",  swX + ( swW / 4 ),     swY + ( swH / 2 ), 2 );
+        tft.setTextColor( getTextColor() );
+        tft.drawString( "DIGI", swX + ( 3 * swW / 4 ), swY + ( swH / 2 ), 2 );
+    }
+    else {
+        tft.fillRect( swX + ( swW / 2 ), swY + 2, ( swW / 2 ) - 2, swH - 4, activeColor );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( getTextColor() );
+        tft.drawString( "ANA",  swX + ( swW / 4 ),     swY + ( swH / 2 ), 2 );
+        tft.setTextColor( TFT_WHITE );
+        tft.drawString( "DIGI", swX + ( 3 * swW / 4 ), swY + ( swH / 2 ), 2 );
+    }
+}
+
 // Erase the sync overlay box and restore the Regional screen content beneath it
 void clearSyncOverlay() {
     const int bx = 50, by = 80, bw = 220, bh = 90;
@@ -1260,7 +1370,11 @@ void drawGraphicsScreen() {
     tft.drawString( "<", backX + backSize / 2, backY + backSize / 2, 4 );
 }
 
-// Partial repaint: only the autoDimLevel value text — no fillScreen flash.
+// ---------------------------------------------------------------------------
+// Targeted partial redraws for the Graphics screen
+// ---------------------------------------------------------------------------
+
+// Repaint only the autoDimLevel value text — no fillScreen flash.
 void redrawAutoDimLevel() {
     const int levelTimeX = 100;  // startX(50) + 50
     const int levelY     = 210;  // onY(175) + 3 + 2*lineHeight(16)
