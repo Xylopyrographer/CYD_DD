@@ -3,7 +3,7 @@
 Describes major changes made to the code base against DataDisplayCYD.ino version 1.4.1.
 
 Date: 2026-02-25  
-Last updated: 2026-02-27 (v1.0.6)
+Last updated: 2026-02-27 (v1.0.7)
 
 ---
 
@@ -40,6 +40,9 @@ Last updated: 2026-02-27 (v1.0.6)
 <tr><td><strong>Graphics screen flicker</strong></td><td>Controls that change a single value (ANA/DIGI toggle, Auto Dim ON/OFF, Start/End/Level +/−, brightness slider) previously triggered a full <code>fillScreen</code> redraw. Replaced with targeted partial-redraw helpers: <code>redrawBrightnessSlider</code>, <code>redrawAutoDimLevel</code>, <code>redrawAutoDimStart</code>, <code>redrawAutoDimEnd</code>, <code>redrawAutoDimSection</code>, <code>redrawDigiAnaToggle</code>. Theme, Invert, and NRM/FLP still use full redraws as they change background colour or display orientation.</td></tr>
 <tr><td><strong>Auto Dim section overlap</strong></td><td><code>redrawAutoDimSection()</code> clear rect was 255 px wide, overwriting the NRM/FLP widget (x=200) and back button (x=252). Width reduced to 195 px.</td></tr>
 <tr><td><strong>DST toggle / sync overlay flicker</strong></td><td>Tapping the DST toggle and dismissing the sync overlay both previously called <code>drawRegionalConfigScreen()</code> (full redraw). Replaced with <code>drawRegionalDstButton()</code> (repaints only the 72×16 button) and <code>clearSyncOverlay()</code> (fills overlay box and redraws only the city/timezone rows beneath it).</td></tr>
+<tr><td><strong>Settings menu hit-test bounds</strong></td><td><code>isTouchInMenuItem()</code> previously only checked the y coordinate, accepting taps anywhere across the full screen width. Added <code>x >= 40 && x <= 220</code> bounds check — taps in the left/right margins no longer trigger the nearest menu item.</td></tr>
+<tr><td><strong>OTA progress bar flicker</strong></td><td>During firmware download and install, <code>tft.fillRect(0, 60, 320, 130)</code> was called on every progress tick clearing the entire region and causing a visible flicker. Static elements (heading text, <code>drawRoundRect</code> border) are now drawn once before each loop; only the fill bar and percentage text update per tick. Text uses <code>setTextColor(fg, bg)</code> for per-glyph background fill so no clear is needed.</td></tr>
+<tr><td><strong>Update indicator ghost artifacts</strong></td><td>The update icon left residual pixels on redraws and theme changes. A <code>tft.fillRect(310, 14, 10, 12, getBgColor())</code> erase pass now precedes every draw of the indicator.</td></tr>
 </tbody>
 </table>
 
@@ -63,6 +66,8 @@ Last updated: 2026-02-27 (v1.0.6)
 <tr><td><strong>SYNC modal feedback dialog</strong></td><td><code>syncRegion()</code> now returns <code>String</code> (empty = success; human-readable text on failure: <em>"No WiFi connection"</em>, <em>"Server error (HTTP NNN)"</em>, <em>"Location API failed"</em>). Tapping SYNC shows a <code>drawSyncOverlay()</code> modal: <em>"Syncing…"</em> during the request; <em>"Sync complete!"</em> for 1.5 s on success; error message + OK button on failure (waits for tap). The device stays on the Regional Setup screen after sync so the user explicitly navigates away.</td></tr>
 <tr><td><strong>Settings inactivity timeout</strong></td><td><code>SETTINGS_INACTIVITY_TIMEOUT = 180 000 ms</code> (3 min) added to <code>constants.h</code>. Any non-CLOCK screen that receives no touch for 3 minutes automatically returns to CLOCK with a full redraw. Uses the existing <code>lastTouchTime</code> variable — no additional state.</td></tr>
 <tr><td><strong>autoDimLevel snap-to-5% grid</strong></td><td>Auto Dim level <code>+</code> snaps to the next 5% grid point then caps at <code>brightPct</code> (= <code>brightness × 100 / 255</code>) so the final step lands on the exact normal-brightness value even when it is not a multiple of 5. Auto Dim level <code>−</code> snaps down to the previous 5% grid point.</td></tr>
+<tr><td><strong>Update indicator tap shortcut to Firmware screen</strong></td><td>When a firmware update is available, tapping anywhere in the bounding box covering the WiFi indicator and update icon (x 295–325, y 10–30) navigates directly to the Firmware settings screen. The standard route through Settings → Firmware remains available. The shortcut is inert when no update is available.</td></tr>
+<tr><td><strong>OTA version check pointing to own repository</strong></td><td><code>VERSION_CHECK_URL</code> now resolves against the project's own GitHub repository (<code>version.json</code> at repo root) rather than the upstream source. <code>version.json</code> carries <code>version</code>, <code>download_url</code>, <code>changelog</code>, <code>min_version</code>, and <code>force_update</code> fields. This decouples the project's OTA release cadence from the upstream author's repository.</td></tr>
 </tbody>
 </table>
 
@@ -86,6 +91,8 @@ Test platform was an original "single micro-USB port" CYD version. Modifications
 <tr><td><strong>Clean build environment</strong></td><td><code>[env:clean]</code> added to <code>platformio.ini</code>: <code>CORE_DEBUG_LEVEL=0</code> (all log macros compiled out) + <code>-Os</code>. Produces the smallest possible binary — useful for checking headroom. Flash: <strong>62.3%</strong> vs 64.8% for <code>[env:release]</code>.</td></tr>
 <tr><td><strong>Custom partition table</strong></td><td><code>partitions/DataDisplayCYD.csv</code> replaces the default partition layout: NVS 20 KB, OTA data 8 KB, <strong>app0 1984 KB</strong>, app1 1984 KB. Eliminates the default 1 MB SPIFFS partition, maximising application space for OTA. Both app0 and app1 are equal size — required for reliable OTA swap.</td></tr>
 <tr><td><strong>Binary export targets</strong></td><td><code>scripts/custom_targets.py</code> registers <code>merged</code> and <code>ota</code> PlatformIO targets. <code>merged</code> stitches bootloader + partitions + boot_app0 + app into one flashable binary via esptool. <code>scripts/build_release.sh</code> runs clean → merged → ota in one shot. Outputs to <code>bin/</code> (gitignored).</td></tr>
+<tr><td><strong><code>build_release.sh</code> uses <code>[env:clean]</code></strong></td><td>All three build commands in <code>scripts/build_release.sh</code> (<code>clean</code>, <code>merged</code>, <code>ota</code>) now use <code>-e clean</code> instead of <code>-e release</code>, producing the smallest possible release binaries with all logging compiled out.</td></tr>
+<tr><td><strong><code>OTA_FORCE_UPDATE</code> debug flag</strong></td><td>A commented-out <code>-D OTA_FORCE_UPDATE</code> flag has been added to <code>[env:debug]</code> in <code>platformio.ini</code>. When uncommented, <code>updateAvailable</code> is forced to <code>true</code> after any version check (regardless of the actual remote version), enabling end-to-end testing of the update indicator and OTA flow without needing a separately hosted newer firmware version.</td></tr>
 </tbody>
 </table>
 
