@@ -128,45 +128,15 @@ void   syncRegion();
 // ---------------------------------------------------------------------------
 
 // ================= LOADING SCREEN =================
-// Shows "Loading information. / One moment..." centred on screen with a
-// drawLine spinner below.  First call paints the full screen with a solid
-// background colour (captured once — no gradient needed here).  Subsequent
-// calls only erase the previous needle and draw the new one; text never
-// flickers and no fillScreen is needed per tick.
-// Needle positions cycle | / - \ (4 steps, frame % 4).
-void drawLoadingScreen( int frame ) {
-    static const int cx = 160, cy = 170;
-    // Pre-computed needle endpoints [x1, y1, x2, y2] for | / - backslash
-    static const int pts[ 4 ][ 4 ] = {
-        { 160, 156, 160, 184 },  // |
-        { 170, 160, 150, 180 },  // /
-        { 146, 170, 174, 170 },  // -
-        { 150, 160, 170, 180 },  // backslash
-    };
-    static bool     textDrawn = false;
-    static uint16_t bg        = TFT_BLACK;   // captured once on first call
-    int             pos       = frame % 4;
-
-    if ( !textDrawn ) {
-        // Capture bg as a plain solid colour — no gradient on the loading screen
-        bg = getBgColor();
-        tft.fillScreen( bg );
-        tft.setTextDatum( MC_DATUM );
-        tft.setTextColor( getTextColor() );
-        tft.drawString( "Loading information.", 160, 100, 2 );
-        tft.drawString( "One moment...", 160, 130, 2 );
-        textDrawn = true;
-    }
-    else {
-        // Erase previous needle using the same solid colour as the background fill
-        int prev = ( pos + 3 ) % 4;
-        tft.drawLine( pts[ prev ][ 0 ], pts[ prev ][ 1 ],
-                      pts[ prev ][ 2 ], pts[ prev ][ 3 ], bg );
-    }
-    // Draw new needle and repaint pivot dot (erase may nick it)
-    tft.drawLine( pts[ pos ][ 0 ], pts[ pos ][ 1 ],
-                  pts[ pos ][ 2 ], pts[ pos ][ 3 ], TFT_SKYBLUE );
-    tft.fillCircle( cx, cy, 3, TFT_SKYBLUE );
+// Shows "Loading information. / One moment..." centred on a solid background.
+// Called once from setup() after WiFi connects; stays on screen while NTP
+// syncs.  The first clock render blanks and rebuilds the display when ready.
+void drawLoadingScreen() {
+    tft.fillScreen( getBgColor() );
+    tft.setTextDatum( MC_DATUM );
+    tft.setTextColor( getTextColor() );
+    tft.drawString( "Loading information.", 160, 110, 2 );
+    tft.drawString( "One moment...", 160, 140, 2 );
 }
 
 void showWifiConnectingScreen( String ssid ) {

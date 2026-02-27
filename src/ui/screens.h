@@ -10,7 +10,7 @@ bool isTouchInMenuItem( int y, int itemIndex );
 // --- WiFi / startup screens ---
 void showWifiConnectingScreen( String ssid );
 void showWifiResultScreen( bool success );
-void drawLoadingScreen( int frame );   // Animated loading screen; frame 0-7 cycles  | / - |
+void drawLoadingScreen();              // Static loading screen shown while NTP syncs
 void scanWifiNetworks();
 
 // --- Touch calibration ---
