@@ -1368,7 +1368,9 @@ void handleTouch( int x, int y ) {
                 int levelMinusX = levelPlusX + 26;
                 if ( x >= levelPlusX && x <= levelPlusX + btnW && y >= levelY - 6 && y <= levelY + 6 ) {
                     int brightPct = brightness * 100 / 255;
-                    autoDimLevel = min( autoDimLevel + 5, brightPct );
+                    // Snap up to next 5% grid point, then cap at normal brightness
+                    int next = ( ( autoDimLevel / 5 ) + 1 ) * 5;
+                    autoDimLevel = min( next, brightPct );
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();
@@ -1377,7 +1379,9 @@ void handleTouch( int x, int y ) {
                     break;
                 }
                 if ( x >= levelMinusX && x <= levelMinusX + btnW && y >= levelY - 6 && y <= levelY + 6 ) {
-                    autoDimLevel = max( autoDimLevel - 5, 0 );
+                    // Snap down to previous 5% grid point (floor), minimum 0
+                    int prev = ( ( autoDimLevel - 1 ) / 5 ) * 5;
+                    autoDimLevel = max( prev, 0 );
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();
