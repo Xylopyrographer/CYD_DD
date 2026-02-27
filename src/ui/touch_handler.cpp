@@ -149,7 +149,7 @@ bool   lookupCountryGeonames( String countryName );
 bool   lookupCityGeonames( String cityName, String countryHint );
 void   getCountryCities( String countryName, String cities[], int &count );
 String obfuscatePassword( const String &plain );
-void   syncRegion();
+String syncRegion();
 // ---------------------------------------------------------------------------
 void handleTouch( int x, int y ) {
     switch ( currentState ) {
@@ -755,9 +755,30 @@ void handleTouch( int x, int y ) {
             }
             else if ( x >= 40 && x <= 145 && y >= 205 && y <= 235 ) {
                 if ( regionAutoMode ) {
-                    syncRegion();
-                    currentState = CLOCK;
-                    lastSec = -1;
+                    drawSyncOverlay( "Syncing...", false );
+                    String syncErr = syncRegion();
+                    if ( syncErr.isEmpty() ) {
+                        drawSyncOverlay( "Sync complete!", false );
+                        delay( 1500 );
+                    }
+                    else {
+                        drawSyncOverlay( syncErr, true );
+                        // Wait for OK tap
+                        while ( true ) {
+                            if ( ts.tirqTouched() && ts.touched() ) {
+                                TS_Point p = ts.getPoint();
+                                int tx = constrain( map( p.x, touchXMin, touchXMax, 0, 320 ), 0, 319 );
+                                int ty = constrain( map( p.y, touchYMin, touchYMax, 0, 240 ), 0, 239 );
+                                if ( tx >= 110 && tx <= 210 && ty >= 134 && ty <= 158 ) {
+                                    break;
+                                }
+                            }
+                            delay( 50 );
+                        }
+                        delay( UI_DEBOUNCE_MS );
+                    }
+                    drawRegionalScreen();
+                    // Stay on REGIONALCONFIG — user must explicitly navigate away
                 }
                 else {
                     currentState = COUNTRYSELECT;
