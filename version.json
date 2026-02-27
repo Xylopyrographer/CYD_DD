@@ -1,0 +1,7 @@
+{
+  "version": "1.4.2",
+  "download_url": "https://github.com/Xylopyrographer/CYD_DD/releases/download/v1.0.6/CYD_DataDisplay_v1.4.2_OTA.bin",
+  "changelog": "Settings menu hit-test fix; build_release.sh uses [env:clean]",
+  "min_version": "1.4",
+  "force_update": false
+}
