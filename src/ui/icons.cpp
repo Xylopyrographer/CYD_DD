@@ -407,4 +407,3 @@ void drawDegreeCircle( int x, int y, int r, uint16_t color ) {
     }
 }
 
-

@@ -24,5 +24,3 @@ void loadRecentCities() {
     prefs.end();
 }
 
-
-

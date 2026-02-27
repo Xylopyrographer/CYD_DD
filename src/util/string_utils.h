@@ -8,4 +8,3 @@ String toTitleCase( String input );
 // Returns true if `input` loosely matches `target` (case-insensitive prefix/contains).
 bool fuzzyMatch( String input, String target );
 
-
