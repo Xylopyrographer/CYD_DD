@@ -2,6 +2,30 @@
 
 ---
 
+## v1.0.7 — 2026-02-27
+
+### New Features
+
+- **Update indicator tap shortcut** — Tapping anywhere over the WiFi indicator or update icon (top-right corner) when a firmware update is available navigates directly to the Firmware settings screen. The standard route through Settings → Firmware remains available. The touch zone is inert when no update is available.
+
+- **OTA version check pointing to own repository** — `VERSION_CHECK_URL` now resolves against the project's own `version.json` at the root of this repository, replacing the previous upstream URL. This decouples the project's OTA release cadence from the upstream author's repository.
+
+### Bug Fixes
+
+- **Settings menu hit-test bounds** — Tapping in the empty space to the left or right of a Settings menu item no longer incorrectly activates the nearest item. Touch is now only accepted within the button x-bounds (40–220 px).
+
+- **OTA progress bar flicker** — During firmware download and install the entire display region was cleared on every progress tick, causing a visible flicker. Static elements (heading, border rectangle) are now drawn once before the loop; only the fill bar and percentage text are updated per tick.
+
+- **Update indicator ghost artifacts** — The update icon left residual pixels on theme changes and forced redraws. The icon footprint is now erased before each redraw.
+
+### Build & Tooling
+
+- **`build_release.sh` uses `[env:clean]`** — All three build targets in the release script now use `[env:clean]`, producing the smallest possible release binaries with all logging compiled out.
+
+- **`OTA_FORCE_UPDATE` debug flag** — A commented-out `-D OTA_FORCE_UPDATE` flag in `[env:debug]` forces `updateAvailable = true` after any version check, enabling end-to-end OTA testing without hosting a newer firmware version.
+
+---
+
 ## v1.0.6 — 2026-02-27
 
 ### New Features
