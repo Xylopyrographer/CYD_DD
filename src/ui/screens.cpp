@@ -129,13 +129,11 @@ void   syncRegion();
 
 // ================= LOADING SCREEN =================
 // Shows "Loading information. / One moment..." centred on screen with a
-// drawLine spinner below.  frame 0 draws the full screen; subsequent calls
-// only erase the previous needle and draw the new one — text never flickers.
-// Needle positions cycle | / - \ (4 steps, passed as frame % 4):
-//   |  cx=160, cy=170, r=14, r_pivot=3
-//   /  endpoint offsets computed from 45° steps
-//   -
-//   backslash
+// drawLine spinner below.  First call paints the full screen with a solid
+// background colour (captured once — no gradient needed here).  Subsequent
+// calls only erase the previous needle and draw the new one; text never
+// flickers and no fillScreen is needed per tick.
+// Needle positions cycle | / - \ (4 steps, frame % 4).
 void drawLoadingScreen( int frame ) {
     static const int cx = 160, cy = 170;
     // Pre-computed needle endpoints [x1, y1, x2, y2] for | / - backslash
@@ -145,12 +143,13 @@ void drawLoadingScreen( int frame ) {
         { 146, 170, 174, 170 },  // -
         { 150, 160, 170, 180 },  // backslash
     };
-    uint16_t bg  = getBgColor();
-    int      pos = frame % 4;
-    static bool textDrawn = false;
+    static bool     textDrawn = false;
+    static uint16_t bg        = TFT_BLACK;   // captured once on first call
+    int             pos       = frame % 4;
 
     if ( !textDrawn ) {
-        // Full repaint on first call only
+        // Capture bg as a plain solid colour — no gradient on the loading screen
+        bg = getBgColor();
         tft.fillScreen( bg );
         tft.setTextDatum( MC_DATUM );
         tft.setTextColor( getTextColor() );
@@ -159,7 +158,7 @@ void drawLoadingScreen( int frame ) {
         textDrawn = true;
     }
     else {
-        // Erase previous needle
+        // Erase previous needle using the same solid colour as the background fill
         int prev = ( pos + 3 ) % 4;
         tft.drawLine( pts[ prev ][ 0 ], pts[ prev ][ 1 ],
                       pts[ prev ][ 2 ], pts[ prev ][ 3 ], bg );
