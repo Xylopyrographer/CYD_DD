@@ -11,4 +11,8 @@ void backlightInit( int initialBrightness = 255 );
 // Set backlight duty cycle (0–255)
 void backlightSet( int value );
 
+// Apply scheduled auto-dim (call every ~60 s from the main loop)
 void applyAutoDim();
+
+// Cancel auto-dim immediately and restore normal brightness (e.g. on any touch)
+void backlightCancelDim();
