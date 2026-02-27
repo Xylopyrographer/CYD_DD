@@ -3,7 +3,7 @@
 Describes major changes made to the code base against DataDisplayCYD.ino version 1.4.1.
 
 Date: 2026-02-25  
-Last updated: 2026-02-26 (`calendar` branch)
+Last updated: 2026-02-26 (dev)
 
 ---
 
@@ -15,7 +15,7 @@ Last updated: 2026-02-26 (`calendar` branch)
 <thead><tr><th>Fix</th><th>Detail</th></tr></thead>
 <tbody>
 <tr><td><strong>Startup white flash</strong></td><td><code>pinMode(TFT_BL, OUTPUT)</code> + <code>digitalWrite(TFT_BL, LOW)</code> as first instructions in <code>setup()</code>. Residual ~1 s flash during boot ROM is a hardware issue (no pull-down on GPIO 21 gate); a 10 kΩ pull-down to GND should eliminate it.</td></tr>
-<tr><td><strong>Startup partial render</strong></td><td>Backlight held at 0 during first loop pass; revealed atomically after weather fetch + full clock render complete. No more partially-drawn clock before weather data loads.</td></tr>
+<tr><td><strong>Startup partial render</strong></td><td>A "Loading information. / One moment..." screen is displayed immediately after WiFi connects and persists while NTP syncs, timezone is resolved, and weather is fetched. The clock layout is painted in one complete pass at full brightness with no intermediate blank or partial render. The previous backlight-off/on guard is removed — it is superseded by the loading screen.</td></tr>
 <tr><td><strong>RGB LED on at startup</strong></td><td>The three discrete CYD LEDs (R/G/B, active-LOW) illuminate on every cold boot because the ESP32 GPIO pins reset to INPUT / float LOW, forward-biasing the LEDs. Fixed by <code>initLEDS()</code> in <code>hal/led.h</code>: sets all three pins to OUTPUT and drives them HIGH (<code>CYD_LED_RGB_OFF()</code>) as part of <code>setup()</code>. Convenience macros <code>CYD_LED_RED/GREEN/BLUE_ON/OFF()</code> and <code>CYD_LED_RGB_ON/OFF()</code> provided for explicit control if needed.</td></tr>
 <tr><td><strong>Clock hand glitch</strong></td><td><code>updateHands()</code> replaced with sprite-based render. 140×140 px <code>TFT_eSprite</code> renders entire clock face off-screen each second; pushed with single <code>pushSprite()</code>. Eliminates partial-draw flicker.</td></tr>
 <tr><td><strong>WiFi indicator clipped</strong></td><td>Sprite right edge is x=299. WiFi indicator moved to <code>fillCircle(305, 20, 4)</code> — 2 px clearance. Indicators redrawn after <code>pushSprite()</code>.</td></tr>
@@ -48,6 +48,7 @@ Last updated: 2026-02-26 (`calendar` branch)
 <tr><td><strong>Touch calibration</strong></td><td>2-point procedure in Settings → Calibrate (orange). Taps two crosshair targets; reads raw XPT2046 ADC values; extrapolates <code>touchXMin/Max/YMin/Max</code>. Saved to NVS; applied immediately without reboot.</td></tr>
 <tr><td><strong>WiFi password obfuscation</strong></td><td><code>obfuscatePassword()</code> / <code>deobfuscatePassword()</code> apply cycling 16-byte XOR then hex-encode before NVS write. Not cryptographic — prevents casual plaintext exposure. Backward-compatible with legacy plaintext values.</td></tr>
 <tr><td><strong>Manual SSID entry</strong></td><td>"Other…" row in WiFi scan list opens on-screen keyboard for manual SSID entry. "Other…" is permanently pinned at row 5 (the last visible row) — scrollable scanned networks occupy rows 0–4 — so it is immediately reachable without scrolling regardless of how many networks were found.</td></tr>
+<tr><td><strong>Loading screen</strong></td><td>"Loading information. / One moment..." displayed immediately after WiFi connects. Persists through the NTP sync wait, timezone resolution, and initial weather fetch — typically 6–10 seconds depending on network conditions. The clock layout then replaces it in a single clean fill; no intermediate blank or flicker.</td></tr>
 <tr><td><strong>Consistent action-item colour</strong></td><td>"Other…" (WiFi list) and "Custom lookup" (country selection) both lead out of their scrolled list into a free-text keyboard flow. Both are now rendered in <code>TFT_BLUE</code> to visually distinguish them from regular list entries and signal their shared role to the user.</td></tr>
 <tr><td><strong>180° display rotation</strong></td><td>New <em>Display Orientation</em> toggle (NRM / FLP) in Graphics settings. FLP rotates the display 180° for upside-down mounting; NRM returns to normal. Chosen orientation persisted to NVS (<code>dispFlip</code>) and applied on every boot. <code>tft.setRotation(1|3)</code> is used; <code>ts.setRotation()</code> is always kept at 1 (the XPT2046 library ignores it — <code>getPoint()</code> returns raw ADC regardless).</td></tr>
 <tr><td><strong>Per-orientation touch calibration</strong></td><td>Touch calibration stored independently per orientation using separate NVS keysets: <code>calXMin/Max/YMin/Max</code> for normal, <code>calXMinF/MaxF/YMinF/MaxF</code> for flipped. Flipped defaults (3900/200/3900/200) encode the reversed axis direction so touch is accurate immediately after a flip without requiring a calibration run. Calibrating in either orientation saves only that orientation's keyset. Literal defaults used in all NVS reads to prevent cross-orientation contamination on toggle.</td></tr>
@@ -69,7 +70,7 @@ Test platform was an original "single micro-USB port" CYD version. Modifications
 <colgroup><col style="width:28%"><col style="width:72%"></colgroup>
 <thead><tr><th>Change</th><th>Detail</th></tr></thead>
 <tbody>
-<tr><td><strong>Dual build environments</strong></td><td><code>platformio.ini</code> split into shared <code>[env]</code> base + <code>[env:release]</code> + <code>[env:debug]</code>. One-line switch between production flash and verbose debug.</td></tr>
+<tr><td><strong>Build environments</strong></td><td><code>platformio.ini</code> split into shared <code>[env]</code> base + <code>[env:release]</code> + <code>[env:debug]</code> + <code>[env:clean]</code>. One-line switch between production flash, verbose debug, and minimum-size headroom check.</td></tr>
 <tr><td><strong>Release log level</strong></td><td><code>CORE_DEBUG_LEVEL=3</code> in release — <code>log_i/w/e</code> milestone output visible, <code>log_d</code> compiled out, no framework debug noise.</td></tr>
 <tr><td><strong>Debug log level</strong></td><td><code>CORE_DEBUG_LEVEL=4</code> in debug — all levels including ESP-IDF/HTTPClient internals.</td></tr>
 <tr><td><strong>Clean build environment</strong></td><td><code>[env:clean]</code> added to <code>platformio.ini</code>: <code>CORE_DEBUG_LEVEL=0</code> (all log macros compiled out) + <code>-Os</code>. Produces the smallest possible binary — useful for checking headroom. Flash: <strong>62.3%</strong> vs 64.8% for <code>[env:release]</code>.</td></tr>
@@ -92,6 +93,7 @@ Test platform was an original "single micro-USB port" CYD version. Modifications
 <tr><td><strong>LVGL removed</strong></td><td><code>src/lv_conf_source.h</code> (993 lines) and all LVGL artefacts removed. All UI is direct TFT_eSPI primitives.</td></tr>
 <tr><td><strong>Czech comments translated</strong></td><td>Not a code quality issue per se, but as a non Czech speaking person, comments were translated to English to facilitate better understanding of the code.</td></tr>
 <tr><td><strong>Includes consolidated</strong></td><td>All <code>#include</code> directives moved to top of <code>main.cpp</code>; orphan comment stubs from extraction removed.</td></tr>
+<tr><td><strong>Dead code removal</strong></td><td>Removed functions that were declared and defined but never called: <code>removeDiacritics()</code> (<code>string_utils</code>), <code>drawSunriseIcon()</code> / <code>drawSunsetIcon()</code> (<code>icons</code>), <code>addToRecentCities()</code> (<code>recent</code>). Removed an orphaned doc comment for the previously-deleted <code>countryToISO()</code>. 123 lines deleted.</td></tr>
 <tr><td><strong>ArduinoJson v7 deprecations</strong></td><td>Replaced <code>StaticJsonDocument&lt;N&gt;</code> and <code>DynamicJsonDocument(N)</code> with the unified <code>JsonDocument</code> type; replaced <code>.containsKey(k)</code> with a direct truthy subscript check. Affected files: <code>weather_api.cpp</code>, <code>ota.cpp</code>, <code>timezone.cpp</code>, <code>location.cpp</code> (app + net).</td></tr>
 </tbody>
 </table>
