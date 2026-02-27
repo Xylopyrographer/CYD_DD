@@ -128,21 +128,46 @@ void   syncRegion();
 // ---------------------------------------------------------------------------
 
 // ================= LOADING SCREEN =================
-// Shows "Loading information. / One moment..." centred on screen with an
-// animated spinner character (| / - \) below.  Called from loop() while
-// waiting for NTP to sync on first boot.
+// Shows "Loading information. / One moment..." centred on screen with a
+// drawLine spinner below.  frame 0 draws the full screen; subsequent calls
+// only erase the previous needle and draw the new one — text never flickers.
+// Needle positions cycle | / - \ (4 steps, passed as frame % 4):
+//   |  cx=160, cy=170, r=14, r_pivot=3
+//   /  endpoint offsets computed from 45° steps
+//   -
+//   backslash
 void drawLoadingScreen( int frame ) {
-    static const char spinChars[] = { '|', '/', '-', '\\', '|', '/', '-', '\\' };
-    uint16_t bg = getBgColor();
-    uint16_t fg = getTextColor();
-    tft.fillScreen( bg );
-    tft.setTextDatum( MC_DATUM );
-    tft.setTextColor( fg );
-    tft.drawString( "Loading information.", 160, 100, 2 );
-    tft.drawString( "One moment...", 160, 130, 2 );
-    char spin[ 2 ] = { spinChars[ frame % 8 ], '\0' };
-    tft.setTextColor( TFT_SKYBLUE );
-    tft.drawString( spin, 160, 170, 4 );
+    static const int cx = 160, cy = 170;
+    // Pre-computed needle endpoints [x1, y1, x2, y2] for | / - backslash
+    static const int pts[ 4 ][ 4 ] = {
+        { 160, 156, 160, 184 },  // |
+        { 170, 160, 150, 180 },  // /
+        { 146, 170, 174, 170 },  // -
+        { 150, 160, 170, 180 },  // backslash
+    };
+    uint16_t bg  = getBgColor();
+    int      pos = frame % 4;
+    static bool textDrawn = false;
+
+    if ( !textDrawn ) {
+        // Full repaint on first call only
+        tft.fillScreen( bg );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( getTextColor() );
+        tft.drawString( "Loading information.", 160, 100, 2 );
+        tft.drawString( "One moment...", 160, 130, 2 );
+        textDrawn = true;
+    }
+    else {
+        // Erase previous needle
+        int prev = ( pos + 3 ) % 4;
+        tft.drawLine( pts[ prev ][ 0 ], pts[ prev ][ 1 ],
+                      pts[ prev ][ 2 ], pts[ prev ][ 3 ], bg );
+    }
+    // Draw new needle and repaint pivot dot (erase may nick it)
+    tft.drawLine( pts[ pos ][ 0 ], pts[ pos ][ 1 ],
+                  pts[ pos ][ 2 ], pts[ pos ][ 3 ], TFT_SKYBLUE );
+    tft.fillCircle( cx, cy, 3, TFT_SKYBLUE );
 }
 
 void showWifiConnectingScreen( String ssid ) {
