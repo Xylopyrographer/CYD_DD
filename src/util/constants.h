@@ -18,6 +18,8 @@ constexpr int TOUCH_DEBOUNCE_MS  = 200;  // Minimum ms between touch events in m
 constexpr int UI_DEBOUNCE_MS     = 150;  // Button-tap debounce delay after an action
 constexpr int UI_SPLASH_DELAY_MS = 2000; // Duration of splash / status message displays
 
+constexpr unsigned long SETTINGS_INACTIVITY_TIMEOUT = 180000UL; // 3 min — return to CLOCK if no touch while in any settings screen
+
 // OTA
 constexpr int OTA_COUNTDOWN_SECS = 10;   // Countdown seconds shown before OTA reboot/rollback
 

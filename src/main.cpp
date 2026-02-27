@@ -430,7 +430,13 @@ void loop() {
         handleTouch( x, y );
     }
 
-    // 3. CLOCK AND WEATHER LOGIC
+    // 3. INACTIVITY TIMEOUT — return to CLOCK after 3 min of no touch while in any settings/setup screen
+    if ( currentState != CLOCK && millis() - lastTouchTime > SETTINGS_INACTIVITY_TIMEOUT ) {
+        currentState = CLOCK;
+        lastSec      = -1;
+    }
+
+    // 4. CLOCK AND WEATHER LOGIC
     if ( currentState == CLOCK ) {
         struct tm ti;
         if ( getLocalTime( &ti ) ) {
