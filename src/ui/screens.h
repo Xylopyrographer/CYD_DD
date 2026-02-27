@@ -11,6 +11,7 @@ bool isTouchInMenuItem( int y, int itemIndex );
 void showWifiConnectingScreen( String ssid );
 void showWifiResultScreen( bool success );
 void drawLoadingScreen();              // Static loading screen shown while NTP syncs
+void drawSyncOverlay( const String &msg, bool okButton );  // Modal overlay for SYNC feedback
 void scanWifiNetworks();
 
 // --- Touch calibration ---

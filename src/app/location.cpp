@@ -45,9 +45,9 @@ extern int          lastDay;
 extern unsigned long lastWeatherUpdate;
 
 // ---------------------------------------------------------------------------
-void syncRegion() {
+String syncRegion() {
     if ( WiFi.status() != WL_CONNECTED ) {
-        return;
+        return "No WiFi connection";
     }
 
     log_d( "[AUTO] Syncing region..." );
@@ -142,12 +142,17 @@ void syncRegion() {
         }
         else {
             log_e( "[AUTO] JSON Parsing error or status not success" );
+            http.end();
+            return "Location API failed";
         }
     }
     else {
         log_w( "[AUTO] HTTP Error: %d", httpCode );
+        http.end();
+        return "Server error (HTTP " + String( httpCode ) + ")";
     }
     http.end();
+    return "";
 }
 
 // drawArrowDown -> src/ui/icons.cpp

@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
 
-void syncRegion();
+String syncRegion();
 void applyLocation();
 void loadSavedLocation();

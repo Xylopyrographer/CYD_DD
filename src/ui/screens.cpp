@@ -140,6 +140,27 @@ void drawLoadingScreen() {
     tft.drawString( "One moment...", 160, 140, 2 );
 }
 
+void drawSyncOverlay( const String &msg, bool okButton ) {
+    // Overlay box — drawn on top of the Regional screen, no fillScreen
+    const int bx = 50, by = 80, bw = 220, bh = 90;
+    tft.fillRoundRect( bx, by, bw, bh, 8, getBgColor() );
+    tft.drawRoundRect( bx, by, bw, bh, 8, TFT_CYAN );
+    tft.setTextDatum( MC_DATUM );
+    if ( okButton ) {
+        // Error state — message near top, OK button below
+        tft.setTextColor( TFT_RED );
+        tft.drawString( msg, 160, 112, 2 );
+        tft.fillRoundRect( 110, 134, 100, 24, 4, TFT_CYAN );
+        tft.setTextColor( TFT_BLACK );
+        tft.drawString( "OK", 160, 146, 2 );
+    }
+    else {
+        // In-progress or success — centred single line
+        tft.setTextColor( getTextColor() );
+        tft.drawString( msg, 160, 126, 2 );
+    }
+}
+
 void showWifiConnectingScreen( String ssid ) {
     tft.fillScreen( getBgColor() );
     tft.setTextColor( getTextColor() );
