@@ -325,19 +325,22 @@ void drawWifiIndicator() {
     tft.fillCircle( 305, 20, 4, color );
 }
 
-// Update available indicator (green arrow next to WiFi)
+// Update available indicator — upward triangle + stem, offset 4 px right of WiFi circle
 void drawUpdateIndicator() {
     if ( !updateAvailable ) {
         return;
     }
 
-    int iconX = 310;  // Next to the WiFi icon
+    // Erase previous icon footprint before drawing (handles redraws without a prior fillScreen)
+    tft.fillRect( 310, 12, 10, 17, getBgColor() );
+
+    int iconX = 313;  // 4 px gap from WiFi circle right edge (x=309)
     int iconY = 12;
 
-    // Green down arrow (download symbol)
-    tft.fillTriangle( iconX, iconY + 8, iconX + 4, iconY, iconX + 8, iconY + 8, TFT_GREEN );
-    tft.fillRect( iconX + 2, iconY + 8, 4, 6, TFT_GREEN );
-    tft.fillRect( iconX, iconY + 14, 8, 2, TFT_GREEN );
+    // Upward-pointing filled triangle (6 px wide, 8 px tall)
+    tft.fillTriangle( iconX, iconY + 8, iconX + 3, iconY, iconX + 6, iconY + 8, TFT_GREEN );
+    // Stem extending down from triangle base (centred, 2 px wide, 6 px tall)
+    tft.fillRect( iconX + 2, iconY + 8, 2, 6, TFT_GREEN );
 }
 
 void drawSettingsIcon( uint16_t color ) {
