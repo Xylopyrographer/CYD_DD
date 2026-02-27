@@ -188,6 +188,12 @@ void performOTAUpdate() {
             int lastProgress = -1;
 
             // ========== PHASE 1: DOWNLOADING ==========
+            // Draw static elements once before the loop
+            tft.fillRect( 0, 60, 320, 130, TFT_BLACK );
+            tft.setTextColor( TFT_CYAN );
+            tft.drawString( "Downloading...", 160, 70, 2 );
+            tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
+
             while ( http.connected() && ( written < ( size_t )contentLength ) ) {
                 size_t available = client->available();
                 if ( available ) {
@@ -199,14 +205,12 @@ void performOTAUpdate() {
                     if ( updateProgress != lastProgress ) {
                         lastProgress = updateProgress;
 
-                        tft.fillRect( 0, 60, 320, 130, TFT_BLACK );
-                        tft.setTextColor( TFT_CYAN );
-                        tft.drawString( "Downloading...", 160, 70, 2 );
-                        tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
+                        // Extend the fill bar in-place (bar only grows — no clear needed)
                         tft.fillRoundRect( 42, 102, ( updateProgress * 236 ) / 100, 21, 3, TFT_CYAN );
-                        tft.setTextColor( TFT_WHITE );
+                        // Text with bg fill to erase previous value without a fillRect
+                        tft.setTextColor( TFT_WHITE, TFT_BLACK );
                         tft.drawString( String( updateProgress ) + "%", 160, 112, 2 );
-                        tft.setTextColor( TFT_LIGHTGREY );
+                        tft.setTextColor( TFT_LIGHTGREY, TFT_BLACK );
                         String sizeStr = String( written / 1024 ) + " / " + String( contentLength / 1024 ) + " KB";
                         tft.drawString( sizeStr, 160, 140, 1 );
 
@@ -219,14 +223,15 @@ void performOTAUpdate() {
             }
 
             // ========== PHASE 2: INSTALLING ==========
+            // Draw static elements once before the loop
             tft.fillRect( 0, 60, 320, 130, TFT_BLACK );
             tft.setTextColor( TFT_ORANGE );
             tft.drawString( "Installing...", 160, 70, 2 );
+            tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
 
             for ( int i = 0; i <= 100; i += 5 ) {
-                tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
                 tft.fillRoundRect( 42, 102, ( i * 236 ) / 100, 21, 3, TFT_ORANGE );
-                tft.setTextColor( TFT_WHITE );
+                tft.setTextColor( TFT_WHITE, TFT_BLACK );
                 tft.drawString( String( i ) + "%", 160, 112, 2 );
                 delay( 50 );
             }
