@@ -154,17 +154,22 @@ String syncRegion();
 void handleTouch( int x, int y ) {
     switch ( currentState ) {
         case CLOCK: {
+            // WiFi + update icon bounding box — jump directly to FIRMWARE screen (only when update icon is visible)
+            if ( updateAvailable && x >= 295 && x <= 325 && y >= 10 && y <= 30 ) {
+                currentState = FIRMWARE_SETTINGS;
+                drawFirmwareScreen();
+                delay( UI_DEBOUNCE_MS );
+            }
             // Settings button
-            if ( x >= 270 && x <= 320 && y >= 200 && y <= 240 ) {
+            else if ( x >= 270 && x <= 320 && y >= 200 && y <= 240 ) {
                 currentState = SETTINGS;
                 menuOffset = 0;
                 drawSettingsScreen();
             }
-
             // Touch on clock area to toggle 12/24h format (DIGITAL MODE ONLY)
             // Clock area approx x: 180-280, y: 40-130 (based on clockX, clockY, radius)
             // clockX = 230, clockY = 85, radius = 67
-            if ( isDigitalClock && x >= 160 && x <= 300 && y >= 20 && y <= 150 ) {
+            else if ( isDigitalClock && x >= 160 && x <= 300 && y >= 20 && y <= 150 ) {
                 is12hFormat = !is12hFormat;
                 prefs.begin( "sys", false );
                 prefs.putBool( "12hFmt", is12hFormat );
