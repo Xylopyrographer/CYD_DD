@@ -499,7 +499,7 @@ void loop() {
             static unsigned long lastSpinMs = 0;
             if ( millis() - lastSpinMs >= 200 ) {
                 drawLoadingScreen( spinFrame );
-                spinFrame = ( spinFrame + 1 ) % 8;
+                spinFrame = ( spinFrame + 1 ) % 4;
                 lastSpinMs = millis();
             }
         }
