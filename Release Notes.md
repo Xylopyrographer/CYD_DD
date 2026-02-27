@@ -2,6 +2,43 @@
 
 ---
 
+## v1.0.6 — 2026-02-27
+
+### New Features
+
+- **Loading screen** — A *"Loading information. One moment…"* screen is displayed immediately after WiFi connects and persists while NTP syncs, the timezone is resolved, and the initial weather data is fetched. The clock layout then appears in a single clean render at full brightness with no intermediate blank frame or partial-draw flash.
+
+- **DST toggle (MANUAL timezone mode)** — A *DST: OFF / DST: ON* button has been added to the Regional Setup screen when the device is in MANUAL timezone mode. Tapping it adjusts the active UTC offset by ±1 hour and persists the state across reboots. The toggle resets automatically when a city is selected from the built-in list, since city-derived timezone rules handle DST automatically.
+
+- **SYNC modal feedback** — Tapping *SYNC* on the Regional Setup screen now shows an overlay dialog. *"Syncing…"* is displayed during the network request; on success *"Sync complete!"* is shown briefly before the overlay clears; on failure the error reason is shown with an *OK* button to dismiss. The device remains on the Regional Setup screen after a sync rather than navigating away automatically.
+
+- **Settings inactivity timeout** — Any settings screen that receives no touch input for 3 minutes automatically returns to the main clock face.
+
+- **Auto-dim level snap-to-grid** — The *+* and *−* buttons for the auto-dim brightness level now snap to the nearest 5% step. The *+* button also caps at the current normal brightness so the dim level can never be set above the screen's normal operating brightness.
+
+### Bug Fixes
+
+- **Tap-to-restore when auto-dimmed** — Tapping the display while it is in the auto-dimmed state now immediately restores normal brightness before processing the tap. Previously the first tap was consumed waking the display without producing any UI response.
+
+- **Minimum brightness floor** — The brightness slider lower bound has been raised from 0 to ~12% (raw value 30). A preference saved at a near-zero value from a previous firmware version is clamped on boot, preventing the display from becoming inaccessibly dark.
+
+- **Auto-dim level capped at normal brightness** — The auto-dim level can no longer be set above the screen's current normal brightness. Previously it was possible to configure a dim level that would *increase* brightness during auto-dim periods.
+
+- **Graphics screen flicker** — Tapping any single-value control on the Graphics settings screen (clock style, auto-dim toggle, start/end/level, brightness slider) no longer triggers a full-screen repaint. Each control now redraws only its own region in place.
+
+- **DST toggle and sync overlay flicker** — Tapping the DST button and dismissing the sync overlay previously caused a full-screen flash. Both now use targeted partial redraws.
+
+- **Auto Dim section overlap** — The auto-dim section redraw rect was incorrectly sized, overwriting the NRM/FLP orientation widget and the back button. The clear region has been corrected.
+
+- **Loading screen flicker** — The loading screen previously flashed blank while waiting for HTTP responses. The screen fill now happens before the network calls so the display remains stable throughout.
+
+### Code Quality
+
+- **Dead code removal** — Removed several functions that were defined but never called, reducing binary size.
+- **Monitor time filter** — Serial monitor output is now prefixed with a timestamp filter for easier log reading during development.
+
+---
+
 ## v1.0.5 — 2026-02-26
 
 ### New Features
