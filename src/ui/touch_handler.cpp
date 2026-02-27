@@ -198,7 +198,7 @@ void handleTouch( int x, int y ) {
             // Detect taps on menu items
             else {
                 for ( int i = 0; i < 4; i++ ) { // 4 visible items on screen
-                    if ( isTouchInMenuItem( y, i ) ) {
+                    if ( isTouchInMenuItem( x, y, i ) ) {
                         int actualItem = i + menuOffset;  // Remap: visual position → actual item
 
                         switch ( actualItem ) {
