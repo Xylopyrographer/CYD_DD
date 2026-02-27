@@ -70,6 +70,7 @@ extern float      lon;
 extern String     cityName;
 extern String     countryName;
 extern bool       regionAutoMode;
+extern bool       manualDstActive;
 extern RecentCity recentCities[];
 extern int        recentCount;
 extern String     customCityInput;
@@ -701,7 +702,8 @@ void handleTouch( int x, int y ) {
                     gmtOffset_sec = 50400;
                 }
                 daylightOffset_sec = 0;
-                int posixOff = -( gmtOffset_sec / 3600 );
+                int effectiveOffsetP = gmtOffset_sec + ( manualDstActive ? 3600 : 0 );
+                int posixOff = -( effectiveOffsetP / 3600 );
                 posixTZ = "UTC" + String( posixOff );
                 configTime( 0, 0, ntpServer );
                 setenv( "TZ", posixTZ.c_str(), 1 );
@@ -709,6 +711,7 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putInt( "gmt", gmtOffset_sec );
                 prefs.putInt( "dst", daylightOffset_sec );
+                prefs.putBool( "manualDst", manualDstActive );
                 prefs.putString( "posixTZ", posixTZ );
                 prefs.end();
                 drawRegionalScreen();
@@ -720,7 +723,8 @@ void handleTouch( int x, int y ) {
                     gmtOffset_sec = -43200;
                 }
                 daylightOffset_sec = 0;
-                int posixOff = -( gmtOffset_sec / 3600 );
+                int effectiveOffsetM = gmtOffset_sec + ( manualDstActive ? 3600 : 0 );
+                int posixOff = -( effectiveOffsetM / 3600 );
                 posixTZ = "UTC" + String( posixOff );
                 configTime( 0, 0, ntpServer );
                 setenv( "TZ", posixTZ.c_str(), 1 );
@@ -728,6 +732,22 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putInt( "gmt", gmtOffset_sec );
                 prefs.putInt( "dst", daylightOffset_sec );
+                prefs.putBool( "manualDst", manualDstActive );
+                prefs.putString( "posixTZ", posixTZ );
+                prefs.end();
+                drawRegionalScreen();
+                delay( UI_DEBOUNCE_MS );
+            }
+            else if ( !regionAutoMode && x >= 195 && x <= 267 && y >= 172 && y <= 188 ) {
+                manualDstActive = !manualDstActive;
+                int effectiveOffsetD = gmtOffset_sec + ( manualDstActive ? 3600 : 0 );
+                int posixOff = -( effectiveOffsetD / 3600 );
+                posixTZ = "UTC" + String( posixOff );
+                configTime( 0, 0, ntpServer );
+                setenv( "TZ", posixTZ.c_str(), 1 );
+                tzset();
+                prefs.begin( "sys", false );
+                prefs.putBool( "manualDst", manualDstActive );
                 prefs.putString( "posixTZ", posixTZ );
                 prefs.end();
                 drawRegionalScreen();

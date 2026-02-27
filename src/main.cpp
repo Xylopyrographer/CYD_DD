@@ -169,6 +169,7 @@ bool forceClockRedraw = false;
 ScreenState currentState = CLOCK;
 
 bool regionAutoMode = true;
+bool manualDstActive = false;   // user-set DST for raw-offset MANUAL timezone
 String selectedCountry = "";
 String selectedCity;
 String selectedTimezone;

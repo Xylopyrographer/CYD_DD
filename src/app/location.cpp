@@ -38,6 +38,7 @@ extern int    lookupDstOffset;
 extern long   gmtOffset_sec;
 extern int    daylightOffset_sec;
 extern bool   regionAutoMode;
+extern bool   manualDstActive;
 
 // Clock / weather timing
 extern int          lastDay;
@@ -237,6 +238,8 @@ void applyLocation() {
     prefs.putString( "posixTZ", posixTZ );
     prefs.putInt( "gmt", gmtOffset_sec );
     prefs.putInt( "dst", daylightOffset_sec );
+    manualDstActive = false;
+    prefs.putBool( "manualDst", false );
     prefs.putString( "isoCode", lookupISOCode );
 
     // ALSO SAVE COORDINATES (now 0.0 so weather update will fetch correct ones next time)
@@ -257,6 +260,7 @@ void applyLocation() {
 void loadSavedLocation() {
     prefs.begin( "sys", false );
     regionAutoMode = prefs.getBool( "regionAuto", true );
+    manualDstActive = prefs.getBool( "manualDst", false );
     String savedCountry = prefs.getString( "country", "" );
     String savedCity = prefs.getString( "city", "" );
     selectedTimezone = prefs.getString( "timezone", "" );

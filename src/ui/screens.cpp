@@ -61,6 +61,7 @@ extern float     lon;
 extern String    cityName;
 extern String    countryName;
 extern bool      regionAutoMode;
+extern bool      manualDstActive;
 extern RecentCity recentCities[];
 extern int       recentCount;
 extern String    customCityInput;
@@ -677,6 +678,15 @@ void drawRegionalScreen() {
         tft.drawString( "+", 134, 180, 2 );
         tft.drawRoundRect( 155, 172, 28, 16, 3, TFT_GREEN );
         tft.drawString( "-", 169, 180, 2 );
+        if ( manualDstActive ) {
+            tft.fillRoundRect( 195, 172, 72, 16, 3, TFT_ORANGE );
+            tft.setTextColor( TFT_WHITE );
+        }
+        else {
+            tft.drawRoundRect( 195, 172, 72, 16, 3, getTextColor() );
+            tft.setTextColor( getTextColor() );
+        }
+        tft.drawString( manualDstActive ? "DST: ON" : "DST: OFF", 231, 180, 2 );
         tft.setTextDatum( ML_DATUM );
     }
 
