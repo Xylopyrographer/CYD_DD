@@ -113,6 +113,11 @@ void checkForUpdate() {
 
             updateAvailable = isNewerVersion( String( FIRMWARE_VERSION ), availableVersion );
 
+            #ifdef OTA_FORCE_UPDATE
+            updateAvailable = true;   // OTA_FORCE_UPDATE: bypass version comparison
+            log_w( "[OTA] OTA_FORCE_UPDATE defined — forcing updateAvailable = true" );
+            #endif
+
             if ( updateAvailable ) {
                 log_i( "[OTA] New version available!" );
                 log_i( "[OTA] Download URL: %s", downloadURL.c_str() );
