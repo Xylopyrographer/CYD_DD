@@ -1218,7 +1218,15 @@ void handleTouch( int x, int y ) {
             // Slider is now at x=10, width=130
             if ( x >= 10 && x <= 140 && y >= 125 && y <= 137 ) {
                 int newBrightness = map( x - 10, 0, 130, 0, 255 );
-                brightness = constrain( newBrightness, 0, 255 );
+                brightness = constrain( newBrightness, BRIGHT_MIN, 255 );
+                // Cap autoDimLevel so it never exceeds the new normal brightness
+                int brightPct = brightness * 100 / 255;
+                if ( autoDimLevel > brightPct ) {
+                    autoDimLevel = brightPct;
+                    prefs.begin( "sys", false );
+                    prefs.putInt( "autoDimLevel", autoDimLevel );
+                    prefs.end();
+                }
                 // Throttle NVS writes to ≤1 per 500 ms — flash writes can stall the bus
                 static unsigned long lastNVSSaveBright = 0;
                 if ( millis() - lastNVSSaveBright > 500 ) {
@@ -1359,7 +1367,8 @@ void handleTouch( int x, int y ) {
                 int levelPlusX = startTimeX + 50;
                 int levelMinusX = levelPlusX + 26;
                 if ( x >= levelPlusX && x <= levelPlusX + btnW && y >= levelY - 6 && y <= levelY + 6 ) {
-                    autoDimLevel = min( autoDimLevel + 5, 100 );
+                    int brightPct = brightness * 100 / 255;
+                    autoDimLevel = min( autoDimLevel + 5, brightPct );
                     prefs.begin( "sys", false );
                     prefs.putInt( "autoDimLevel", autoDimLevel );
                     prefs.end();

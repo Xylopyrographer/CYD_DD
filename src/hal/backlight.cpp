@@ -63,3 +63,13 @@ void applyAutoDim() {
     }
 }
 
+void backlightCancelDim() {
+    if ( !isDimmed ) {
+        return;
+    }
+    brightness = preDimBrightness;
+    isDimmed   = false;
+    backlightSet( brightness );
+    log_d( "[AUTODIM] Cancelled by touch - brightness restored: %d", brightness );
+}
+

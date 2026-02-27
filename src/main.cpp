@@ -257,7 +257,10 @@ void setup() {
         log_d( "[OTA] Install mode: %d", otaInstallMode );
 
         // FIX: Load brightness and Auto Dim settings
-        brightness = prefs.getInt( "bright", 255 ); // Load saved brightness
+        {
+            int b = prefs.getInt( "bright", 255 );    // Load saved brightness (floor at BRIGHT_MIN)
+            brightness = b < BRIGHT_MIN ? BRIGHT_MIN : b;
+        }
         autoDimEnabled = prefs.getBool( "autoDimEnabled", false );
         autoDimStart = prefs.getInt( "autoDimStart", 22 );
         autoDimEnd = prefs.getInt( "autoDimEnd", 6 );
@@ -419,6 +422,11 @@ void loop() {
             return;
         }
         lastTouchTime = millis();
+
+        // If auto-dim has darkened the screen, any touch restores brightness first
+        if ( isDimmed ) {
+            backlightCancelDim();
+        }
 
         TS_Point p = ts.getPoint();
         // Cal values already encode orientation (flipped set has min/max reversed)
