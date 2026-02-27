@@ -689,8 +689,9 @@ void redrawAutoDimEnd() {
 }
 
 void redrawAutoDimSection() {
-    // Clear the entire Auto Dim area (below the brightness/toggle rows)
-    const int areaX = 0, areaY = 150, areaW = 255, areaH = 75;
+    // Clear the Auto Dim area — width capped at 195 to stay clear of the
+    // NRM/FLP control (x=200) and the back button (x=252) on the right side
+    const int areaX = 0, areaY = 150, areaW = 195, areaH = 75;
     uint16_t bg  = getBgColor();
     uint16_t txt = getTextColor();
     tft.fillRect( areaX, areaY, areaW, areaH, bg );
