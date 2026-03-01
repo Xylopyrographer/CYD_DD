@@ -53,17 +53,21 @@ void drawWeatherIconVector( int code, int x, int y ) {
         case 45:
         case 48: // Fog
             for ( int i = 0; i < 3; i++ ) {
-                tft.fillRoundRect( x + 4, y + 12 + ( i * 6 ), 24, 3, 2, TFT_SILVER );
-                tft.drawRoundRect( x + 4, y + 12 + ( i * 6 ), 24, 3, 2, shadowCol ); // Shadow
+                tft.fillRoundRect( x + 4, y + 9 + ( i * 6 ), 24, 3, 2, TFT_SILVER );
+                tft.drawRoundRect( x + 4, y + 9 + ( i * 6 ), 24, 3, 2, shadowCol ); // Shadow
             }
             break;
 
         case 51:
         case 53:
         case 55:
+        case 56:
+        case 57:
         case 61:
         case 63:
-        case 65: // Rain
+        case 65:
+        case 66:
+        case 67: // Rain / freezing drizzle / freezing rain
             drawCloudVector( x, y + 2, TFT_SILVER );
             for ( int i = 0; i < 3; i++ ) {
                 tft.fillRoundRect( x + 10 + ( i * 6 ), y + 22, 2, 6, 1, TFT_BLUE );
@@ -88,6 +92,16 @@ void drawWeatherIconVector( int code, int x, int y ) {
             tft.drawCircle( x + 22, y + 10, 8, shadowCol ); // Shadow
             drawCloudVector( x, y + 2, TFT_SILVER );
             tft.fillRoundRect( x + 16, y + 22, 2, 6, 1, TFT_BLUE );
+            break;
+
+        case 85:
+        case 86: // Snow showers
+            tft.fillCircle( x + 22, y + 10, 7, TFT_YELLOW );
+            tft.drawCircle( x + 22, y + 10, 8, shadowCol );
+            drawCloudVector( x, y + 2, TFT_SILVER );
+            tft.setTextColor( TFT_SKYBLUE );
+            tft.drawString( "*", x + 12, y + 22 );
+            tft.drawString( "*", x + 22, y + 22 );
             break;
 
         case 95:
@@ -137,17 +151,21 @@ void drawWeatherIconVectorSmall( int code, int x, int y ) {
         case 45:
         case 48: // Fog
             for ( int i = 0; i < 3; i++ ) {
-                tft.fillRoundRect( x + 4, y + 12 + ( i * 5 ), 20, 2, 1, TFT_SILVER );
-                tft.drawRoundRect( x + 4, y + 12 + ( i * 5 ), 20, 2, 1, shadowCol );
+                tft.fillRoundRect( x + 4, y + 10 + ( i * 5 ), 20, 2, 1, TFT_SILVER );
+                tft.drawRoundRect( x + 4, y + 10 + ( i * 5 ), 20, 2, 1, shadowCol );
             }
             break;
 
         case 51:
         case 53:
         case 55:
+        case 56:
+        case 57:
         case 61:
         case 63:
-        case 65: // Rain
+        case 65:
+        case 66:
+        case 67: // Rain / freezing drizzle / freezing rain
             tft.fillCircle( x + 9, y + 13, 6, cloudCol );
             tft.fillCircle( x + 15, y + 10, 8, cloudCol );
             tft.fillCircle( x + 22, y + 13, 6, cloudCol );
@@ -181,6 +199,18 @@ void drawWeatherIconVectorSmall( int code, int x, int y ) {
             tft.fillCircle( x + 20, y + 14, 5, cloudCol );
             tft.fillRoundRect( x + 8, y + 14, 15, 5, 2, cloudCol );
             tft.fillRoundRect( x + 14, y + 21, 2, 5, 1, TFT_BLUE );
+            break;
+
+        case 85:
+        case 86: // Snow showers
+            tft.fillCircle( x + 20, y + 10, 7, TFT_YELLOW );
+            tft.drawCircle( x + 20, y + 10, 8, shadowCol );
+            tft.fillCircle( x + 8, y + 14, 6, cloudCol );
+            tft.fillCircle( x + 14, y + 11, 7, cloudCol );
+            tft.fillCircle( x + 20, y + 14, 5, cloudCol );
+            tft.fillRoundRect( x + 8, y + 14, 15, 5, 2, cloudCol );
+            tft.setTextColor( TFT_SKYBLUE );
+            tft.drawString( "*", x + 14, y + 21 );
             break;
 
         case 95:
