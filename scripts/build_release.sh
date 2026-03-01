@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Build release binaries for CYD_DataDisplay using [env:clean]
-# (CORE_DEBUG_LEVEL=0, -Os — smallest possible binary, all log macros removed)
+# Build release binaries for CYD_DataDisplay using [env:release]
+# (CORE_DEBUG_LEVEL=3, -Os — log_i/w/e visible, log_d compiled out)
 #
 # Produces in bin/:
-#   CYD_DataDisplay_v<version>_FULL.bin   — full flash image (Web Serial / esptool)
-#   CYD_DataDisplay_v<version>_OTA.bin    — app-only image  (HTTP OTA updater)
+#   CYD_DataDisplay_v<version>_R_FULL.bin   — full flash image (Web Serial / esptool)
+#   CYD_DataDisplay_v<version>_R_OTA.bin    — app-only image  (HTTP OTA updater)
+#
+# Filename suffix key: _D = debug, _R = release, _C = clean
 #
 # Run from the project root (where platformio.ini lives):
 #   bash scripts/build_release.sh
@@ -42,17 +44,17 @@ echo ""
 # ------------------------------------------------------------------
 # Release build
 # ------------------------------------------------------------------
-echo "1/2  Building [env:clean] …"
+echo "1/2  Building [env:release] …"
 echo "--------------------------------------------------"
 
 echo "  → Clean"
-pio run -e clean -t clean
+pio run -e release -t clean
 
 echo "  → Build + export FULL (merged) binary"
-pio run -e clean -t merged
+pio run -e release -t merged
 
 echo "  → Export OTA binary"
-pio run -e clean -t ota
+pio run -e release -t ota
 
 echo ""
 echo "=================================================="
