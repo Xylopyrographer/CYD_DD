@@ -43,10 +43,18 @@ def _read(path: str) -> bytes:
 
 
 def _get_version(project_dir: str) -> str:
-    """Extract FIRMWARE_VERSION from src/main.cpp.
+    """Return the binary version string.
 
-    Looks for:  const char *FIRMWARE_VERSION = "x.y.z";
+    Priority:
+    1. RELEASE_VERSION env var (set by build_release.sh from the latest git tag,
+       e.g. v1.0.7 → "1.0.7").  This makes filenames match the GitHub release tag.
+    2. FIRMWARE_VERSION constant in src/main.cpp — used when building outside the
+       release script (e.g. `pio run -e release -t merged` directly).
     """
+    override = os.environ.get("RELEASE_VERSION", "").strip()
+    if override:
+        return override
+
     main_cpp = os.path.join(project_dir, "src", "main.cpp")
     try:
         with open(main_cpp, "r") as f:

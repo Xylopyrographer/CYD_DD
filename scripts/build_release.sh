@@ -18,10 +18,18 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_DIR"
 
+# ------------------------------------------------------------------
+# Determine version: latest git tag (strip leading 'v'), e.g. v1.0.7 -> 1.0.7
+# Falls back to FIRMWARE_VERSION in src/main.cpp (via custom_targets.py)
+# ------------------------------------------------------------------
+RELEASE_VERSION=$(git tag --sort=-v:refname | head -1 | sed 's/^v//')
+export RELEASE_VERSION
+
 echo "=================================================="
 echo " CYD_DataDisplay Release Binary Builder"
 echo "=================================================="
 echo " Project: $PROJECT_DIR"
+echo " Version: v${RELEASE_VERSION:-<from FIRMWARE_VERSION>}"
 echo ""
 
 # Recreate bin/ so every run starts clean
