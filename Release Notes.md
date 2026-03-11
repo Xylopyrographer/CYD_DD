@@ -2,26 +2,42 @@
 
 ---
 
+## v2.0.0 — 2026-03-11
+
+### New Features
+
+- **Digital clock AM/PM indicator** — In 12-hour mode, a small orange dot is shown to the right of the `HH:MM` digits: top position = AM, bottom position = PM. 
+
+- **Digital clock seconds display** — The seconds colon separator has been removed.
+
+- **4-digit to 3-digit time transition bug fix** — In 12-hour mode, switching from a 4-digit time (e.g. `12:59`) to a 3-digit time (e.g. `1:00`) previously left pixel artifacts on the right. Fixed.
+
+### Improvements
+
+- **Humidity / pressure label spacing** — The weather line now reads `RH: 65%  P: 1013 hPa` to leave more room between the tie display.
+
+### Build & Tooling
+
+- **Version numbering harmonized** — Firmware and project release versions are now aligned. Prior `1.4.x` firmware numbers were inherited from the upstream project; this release establishes `2.0.0` as the baseline for this fork, which has its own OTA update channel at `https://github.com/Xylopyrographer/CYD_DD`.
+
+---
+
 ## v1.0.7 — 2026-02-27
 
 ### New Features
 
 - **Update indicator tap shortcut** — Tapping anywhere over the WiFi indicator or update icon (top-right corner) when a firmware update is available navigates directly to the Firmware settings screen. The standard route through Settings → Firmware remains available. The touch zone is inert when no update is available.
-
 - **OTA version check pointing to own repository** — `VERSION_CHECK_URL` now resolves against the project's own `version.json` at the root of this repository, replacing the previous upstream URL. This decouples the project's OTA release cadence from the upstream author's repository.
 
 ### Bug Fixes
 
 - **Settings menu hit-test bounds** — Tapping in the empty space to the left or right of a Settings menu item no longer incorrectly activates the nearest item. Touch is now only accepted within the button x-bounds (40–220 px).
-
 - **OTA progress bar flicker** — During firmware download and install the entire display region was cleared on every progress tick, causing a visible flicker. Static elements (heading, border rectangle) are now drawn once before the loop; only the fill bar and percentage text are updated per tick.
-
 - **Update indicator ghost artifacts** — The update icon left residual pixels on theme changes and forced redraws. The icon footprint is now erased before each redraw.
 
 ### Build & Tooling
 
 - **`build_release.sh` uses `[env:clean]`** — All three build targets in the release script now use `[env:clean]`, producing the smallest possible release binaries with all logging compiled out.
-
 - **`OTA_FORCE_UPDATE` debug flag** — A commented-out `-D OTA_FORCE_UPDATE` flag in `[env:debug]` forces `updateAvailable = true` after any version check, enabling end-to-end OTA testing without hosting a newer firmware version.
 
 ---
@@ -31,29 +47,19 @@
 ### New Features
 
 - **Loading screen** — A *"Loading information. One moment…"* screen is displayed immediately after WiFi connects and persists while NTP syncs, the timezone is resolved, and the initial weather data is fetched. The clock layout then appears in a single clean render at full brightness with no intermediate blank frame or partial-draw flash.
-
 - **DST toggle (MANUAL timezone mode)** — A *DST: OFF / DST: ON* button has been added to the Regional Setup screen when the device is in MANUAL timezone mode. Tapping it adjusts the active UTC offset by ±1 hour and persists the state across reboots. The toggle resets automatically when a city is selected from the built-in list, since city-derived timezone rules handle DST automatically.
-
 - **SYNC modal feedback** — Tapping *SYNC* on the Regional Setup screen now shows an overlay dialog. *"Syncing…"* is displayed during the network request; on success *"Sync complete!"* is shown briefly before the overlay clears; on failure the error reason is shown with an *OK* button to dismiss. The device remains on the Regional Setup screen after a sync rather than navigating away automatically.
-
 - **Settings inactivity timeout** — Any settings screen that receives no touch input for 3 minutes automatically returns to the main clock face.
-
 - **Auto-dim level snap-to-grid** — The *+* and *−* buttons for the auto-dim brightness level now snap to the nearest 5% step. The *+* button also caps at the current normal brightness so the dim level can never be set above the screen's normal operating brightness.
 
 ### Bug Fixes
 
 - **Tap-to-restore when auto-dimmed** — Tapping the display while it is in the auto-dimmed state now immediately restores normal brightness before processing the tap. Previously the first tap was consumed waking the display without producing any UI response.
-
 - **Minimum brightness floor** — The brightness slider lower bound has been raised from 0 to ~12% (raw value 30). A preference saved at a near-zero value from a previous firmware version is clamped on boot, preventing the display from becoming inaccessibly dark.
-
 - **Auto-dim level capped at normal brightness** — The auto-dim level can no longer be set above the screen's current normal brightness. Previously it was possible to configure a dim level that would *increase* brightness during auto-dim periods.
-
 - **Graphics screen flicker** — Tapping any single-value control on the Graphics settings screen (clock style, auto-dim toggle, start/end/level, brightness slider) no longer triggers a full-screen repaint. Each control now redraws only its own region in place.
-
 - **DST toggle and sync overlay flicker** — Tapping the DST button and dismissing the sync overlay previously caused a full-screen flash. Both now use targeted partial redraws.
-
 - **Auto Dim section overlap** — The auto-dim section redraw rect was incorrectly sized, overwriting the NRM/FLP orientation widget and the back button. The clear region has been corrected.
-
 - **Loading screen flicker** — The loading screen previously flashed blank while waiting for HTTP responses. The screen fill now happens before the network calls so the display remains stable throughout.
 
 ### Code Quality

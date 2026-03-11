@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Build release binaries for CYD_DataDisplay
+# Build release binaries for CYD_DataDisplay using [env:release]
+# (CORE_DEBUG_LEVEL=3, -Os — log_i/w/e visible, log_d compiled out)
 #
 # Produces in bin/:
-#   CYD_DataDisplay_v<version>_FULL.bin   — full flash image (Web Serial / esptool)
-#   CYD_DataDisplay_v<version>_OTA.bin    — app-only image  (HTTP OTA updater)
+#   CYD_DataDisplay_v<version>_R_FULL.bin   — full flash image (Web Serial / esptool)
+#   CYD_DataDisplay_v<version>_R_OTA.bin    — app-only image  (HTTP OTA updater)
+#
+# Filename suffix key: _D = debug, _R = release, _C = clean
 #
 # Run from the project root (where platformio.ini lives):
 #   bash scripts/build_release.sh
@@ -17,10 +20,21 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_DIR"
 
+# ------------------------------------------------------------------
+# Determine version: RELEASE_VERSION env var (if already set by release.sh),
+# otherwise from the latest git tag (e.g. v1.0.7 → "1.0.7"),
+# falls back to FIRMWARE_VERSION in src/main.cpp (via custom_targets.py)
+# ------------------------------------------------------------------
+if [[ -z "${RELEASE_VERSION:-}" ]]; then
+    RELEASE_VERSION=$(git tag --sort=-v:refname | head -1 | sed 's/^v//')
+fi
+export RELEASE_VERSION
+
 echo "=================================================="
 echo " CYD_DataDisplay Release Binary Builder"
 echo "=================================================="
 echo " Project: $PROJECT_DIR"
+echo " Version: v${RELEASE_VERSION:-<from FIRMWARE_VERSION>}"
 echo ""
 
 # Recreate bin/ so every run starts clean

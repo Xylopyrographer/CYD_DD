@@ -5,6 +5,7 @@
 support/
 iterations/
 bin/
+scripts/release.sh
 PROJECT_CONTEXT.md
 REFACTOR_ANALYSIS.md
 DEVELOPMENT.md

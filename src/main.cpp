@@ -68,7 +68,7 @@ bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with i
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
-const char *FIRMWARE_VERSION = "1.4.1";  // CURRENT VERSION
+const char *FIRMWARE_VERSION = "2.0.0";  // CURRENT VERSION
 const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/Xylopyrographer/CYD_DD/main/version.json";
 const char *FIRMWARE_URL = "https://github.com/lachimalaif/DataDisplay-V1-instalator/releases/latest/download/DataDisplayCYD.ino.bin";
 

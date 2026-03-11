@@ -1,14 +1,18 @@
 # Register custom PlatformIO/SCons targets for CYD_DataDisplay
-# - `-t merged`: Creates CYD_DataDisplay_v<version>[_debug]_FULL.bin for Web Serial flashing
+# - `-t merged`: Creates CYD_DataDisplay_v<version>_<E>_FULL.bin for Web Serial flashing
 #                (bootloader + partition table + boot_app0 + app)
-# - `-t ota`:    Creates CYD_DataDisplay_v<version>[_debug]_OTA.bin for OTA updates
+# - `-t ota`:    Creates CYD_DataDisplay_v<version>_<E>_OTA.bin for OTA updates
 #                (app only, same binary the OTA updater applies)
 #
+# <E> suffix key: _D = debug, _R = release, _C = clean
+#
 # Binaries are placed in CYD_DataDisplay/bin/:
-#   bin/CYD_DataDisplay_v1.4.1_FULL.bin       (release, full flash image)
-#   bin/CYD_DataDisplay_v1.4.1_OTA.bin        (release, OTA app image)
-#   bin/CYD_DataDisplay_v1.4.1_debug_FULL.bin (debug variant)
-#   bin/CYD_DataDisplay_v1.4.1_debug_OTA.bin
+#   bin/CYD_DataDisplay_v1.0.7_R_FULL.bin   (release, full flash image)
+#   bin/CYD_DataDisplay_v1.0.7_R_OTA.bin    (release, OTA app image)
+#   bin/CYD_DataDisplay_v1.0.7_D_FULL.bin   (debug variant)
+#   bin/CYD_DataDisplay_v1.0.7_D_OTA.bin
+#   bin/CYD_DataDisplay_v1.0.7_C_FULL.bin   (clean variant)
+#   bin/CYD_DataDisplay_v1.0.7_C_OTA.bin
 #
 # Any existing binary of the same type/version is removed before creating a new one.
 # Usage:
@@ -43,10 +47,18 @@ def _read(path: str) -> bytes:
 
 
 def _get_version(project_dir: str) -> str:
-    """Extract FIRMWARE_VERSION from src/main.cpp.
+    """Return the binary version string.
 
-    Looks for:  const char *FIRMWARE_VERSION = "x.y.z";
+    Priority:
+    1. RELEASE_VERSION env var (set by build_release.sh from the latest git tag,
+       e.g. v1.0.7 → "1.0.7").  This makes filenames match the GitHub release tag.
+    2. FIRMWARE_VERSION constant in src/main.cpp — used when building outside the
+       release script (e.g. `pio run -e release -t merged` directly).
     """
+    override = os.environ.get("RELEASE_VERSION", "").strip()
+    if override:
+        return override
+
     main_cpp = os.path.join(project_dir, "src", "main.cpp")
     try:
         with open(main_cpp, "r") as f:
@@ -62,10 +74,16 @@ def _get_version(project_dir: str) -> str:
 def _build_suffix(env_name: str) -> str:
     """Return filename suffix based on environment name.
 
-    release → ""         → "CYD_DataDisplay_v1.4.1_FULL.bin"
-    debug   → "_debug"   → "CYD_DataDisplay_v1.4.1_debug_FULL.bin"
+    release → "_R"  → "CYD_DataDisplay_v1.0.7_R_FULL.bin"
+    debug   → "_D"  → "CYD_DataDisplay_v1.0.7_D_FULL.bin"
+    clean   → "_C"  → "CYD_DataDisplay_v1.0.7_C_FULL.bin"
     """
-    return "_debug" if "debug" in env_name.lower() else ""
+    n = env_name.lower()
+    if "debug" in n:
+        return "_D"
+    if "clean" in n:
+        return "_C"
+    return "_R"
 
 
 def _merge_segments(segments):
