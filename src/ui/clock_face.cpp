@@ -203,17 +203,16 @@ void drawDigitalClock( int h, int m, int s ) {
     }
 
     int displayH = h;
-    const char *suffix = "";
+    bool isPM = false;
 
     if ( is12hFormat ) {
         if ( displayH >= 12 ) {
-            suffix = " PM";
+            isPM = true;
             if ( displayH > 12 ) {
                 displayH -= 12;
             }
         }
         else {
-            suffix = " AM";
             if ( displayH == 0 ) {
                 displayH = 12;
             }
@@ -228,21 +227,54 @@ void drawDigitalClock( int h, int m, int s ) {
         sprintf( timeStr, "%02d:%02d", displayH, m ); // leading zero in 24h
     }
 
+    // Compute font 7 metrics once — used for layout of all elements below.
+    int fh7      = tft.fontHeight( 7 );
+    int maxTimeW = tft.textWidth( "12:59", 7 );
+
     tft.setTextDatum( MC_DATUM );
     tft.setTextColor( clockColor, bgColor );
 
-    tft.drawString( timeStr, clockX, clockY, 7 );
-
-    char secStr[ 10 ];
-    if ( is12hFormat ) {
-        sprintf( secStr, ":%02d%s", s, suffix );
+    // Redraw HH:MM only when the string changes (or a full redraw is forced).
+    // This avoids clearing + redrawing the main time every second, which causes flicker.
+    static char prevTimeStr[ 6 ] = "";
+    if ( forceClockRedraw || strcmp( timeStr, prevTimeStr ) != 0 ) {
+        tft.fillRect( clockX - maxTimeW / 2, clockY - fh7 / 2, maxTimeW, fh7, bgColor );
+        tft.drawString( timeStr, clockX, clockY, 7 );
+        strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
-    else {
-        sprintf( secStr, ":%02d", s );
-    }
 
+    // Seconds in font 4 (26 px). Use per-glyph bg fill (setTextColor with bg colour) so
+    // the old glyph pixels are overwritten in-place — no separate fillRect needed, no flash.
+    // SS is always exactly 2 digits so width never changes.
+    // clockY + 45 keeps a safe gap below HH:MM without overlapping it.
+    int secY = clockY + 45;
+    char secStr[ 3 ];
+    sprintf( secStr, "%02d", s );
     tft.setTextColor( getSecHandColor(), bgColor );
-    tft.drawString( secStr, clockX, clockY + 45, 4 );
+    tft.drawString( secStr, clockX, secY, 4 );
+
+    // AM/PM indicator — only in 12h mode.
+    // Fixed X: 4 px to the right of the widest time string ("12:59"), so the dot never
+    // shifts when the display is only 3 digits wide.
+    // AM circle: top of circle = top of main digits (clockY - fh7/2).
+    // PM circle: bottom of circle = bottom of main digits (clockY + fh7/2).
+    // Circles are only redrawn when isPM changes (or a full redraw is forced) to avoid
+    // the every-second erase/redraw touching the HH:MM glyph area and causing flicker.
+    const int circR = 5;
+    const int circX = clockX + maxTimeW / 2 + circR + 4;
+    const int amY   = clockY - fh7 / 2 + circR;
+    const int pmY   = clockY + fh7 / 2 - circR;
+    static bool prevIsPM = !isPM;  // initialise to opposite so first call always draws
+    if ( forceClockRedraw || isPM != prevIsPM ) {
+        tft.fillCircle( circX, amY, circR, bgColor );
+        tft.fillCircle( circX, pmY, circR, bgColor );
+        if ( is12hFormat ) {
+            tft.fillCircle( circX, isPM ? pmY : amY, circR, TFT_ORANGE );
+        }
+        prevIsPM = isPM;
+    }
+
+    forceClockRedraw = false;   // consumed — reset so guards fire only on real changes
 }
 
 void updateHands( int h, int m, int s ) {
@@ -358,10 +390,10 @@ void drawWeatherSection() {
     tft.setCursor( 5, 75 );
     if ( weatherUnitInHg ) {
         float pressInHg = currentPressure * 0.02953f;
-        tft.printf( "Hum: %d%% Press: %.2f inHg", currentHumidity, pressInHg );
+        tft.printf( "RH: %d%%  P: %.2f inHg", currentHumidity, pressInHg );
     }
     else {
-        tft.printf( "Hum: %d%% Press: %d hPa", currentHumidity, currentPressure );
+        tft.printf( "RH: %d%%  P: %d hPa", currentHumidity, currentPressure );
     }
 
     tft.setCursor( 5, 88 );

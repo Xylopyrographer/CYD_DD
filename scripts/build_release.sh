@@ -21,10 +21,13 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
 # ------------------------------------------------------------------
-# Determine version: latest git tag (strip leading 'v'), e.g. v1.0.7 -> 1.0.7
-# Falls back to FIRMWARE_VERSION in src/main.cpp (via custom_targets.py)
+# Determine version: RELEASE_VERSION env var (if already set by release.sh),
+# otherwise from the latest git tag (e.g. v1.0.7 → "1.0.7"),
+# falls back to FIRMWARE_VERSION in src/main.cpp (via custom_targets.py)
 # ------------------------------------------------------------------
-RELEASE_VERSION=$(git tag --sort=-v:refname | head -1 | sed 's/^v//')
+if [[ -z "${RELEASE_VERSION:-}" ]]; then
+    RELEASE_VERSION=$(git tag --sort=-v:refname | head -1 | sed 's/^v//')
+fi
 export RELEASE_VERSION
 
 echo "=================================================="

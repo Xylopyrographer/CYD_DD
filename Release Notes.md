@@ -2,6 +2,26 @@
 
 ---
 
+## v2.0.0 — 2026-03-11
+
+### New Features
+
+- **Digital clock AM/PM indicator** — In 12-hour mode, a small orange dot is shown to the right of the `HH:MM` digits: top position = AM, bottom position = PM. 
+
+- **Digital clock seconds display** — The seconds colon separator has been removed.
+
+- **4-digit to 3-digit time transition bug fix** — In 12-hour mode, switching from a 4-digit time (e.g. `12:59`) to a 3-digit time (e.g. `1:00`) previously left pixel artifacts on the right. Fixed.
+
+### Improvements
+
+- **Humidity / pressure label spacing** — The weather line now reads `RH: 65%  P: 1013 hPa` to leave more room between the tie display.
+
+### Build & Tooling
+
+- **Version numbering harmonized** — Firmware and project release versions are now aligned. Prior `1.4.x` firmware numbers were inherited from the upstream project; this release establishes `2.0.0` as the baseline for this fork, which has its own OTA update channel at `https://github.com/Xylopyrographer/CYD_DD`.
+
+---
+
 ## v1.0.5 — 2026-02-26
 
 ### New Features
