@@ -174,8 +174,12 @@ void handleTouch( int x, int y ) {
                 prefs.begin( "sys", false );
                 prefs.putBool( "12hFmt", is12hFormat );
                 prefs.end();
-                // Force redraw by clearing lastSec
-                lastSec = -1;
+                // Redraw only the digital clock region — no full-screen repaint
+                forceClockRedraw = true;
+                struct tm ti;
+                if ( getLocalTime( &ti ) ) {
+                    updateHands( ti.tm_hour, ti.tm_min, ti.tm_sec );
+                }
                 delay( TOUCH_DEBOUNCE_MS );
             }
             break;
