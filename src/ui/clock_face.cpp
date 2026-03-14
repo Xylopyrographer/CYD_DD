@@ -3,6 +3,7 @@
 #include "icons.h"
 
 #include <TFT_eSPI.h>
+#include "DSEG7Bold24pt7b.h"
 #include <time.h>
 
 #include "../data/app_state.h"
@@ -243,15 +244,19 @@ void drawDigitalClock( int h, int m, int s ) {
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
 
-    // Seconds in font 4 (26 px). Use per-glyph bg fill (setTextColor with bg colour) so
-    // the old glyph pixels are overwritten in-place — no separate fillRect needed, no flash.
-    // SS is always exactly 2 digits so width never changes.
-    // clockY + 45 keeps a safe gap below HH:MM without overlapping it.
-    int secY = clockY + 45;
+    // Seconds in DSEG7 Bold 24pt (GFX free font). Height ~47 px.
+    // setFreeFont with MC_DATUM centres on the given point — clear a fixed rect first
+    // since free fonts don't support per-glyph bg fill via setTextColor(fg, bg).
+    tft.setFreeFont( &DSEG7Bold24pt7b );
+    int secFontH = tft.fontHeight();
+    int secFontW = tft.textWidth( "00" );
+    int secY = clockY + 45 + secFontH / 2;  // baseline-corrected centre point
     char secStr[ 3 ];
     sprintf( secStr, "%02d", s );
-    tft.setTextColor( getSecHandColor(), bgColor );
-    tft.drawString( secStr, clockX, secY, 4 );
+    tft.fillRect( clockX - secFontW / 2 - 2, secY - secFontH / 2, secFontW + 4, secFontH, bgColor );
+    tft.setTextColor( getSecHandColor() );
+    tft.drawString( secStr, clockX, secY );
+    tft.setTextFont( 0 );  // clear free font, restore default
 
     // AM/PM indicator — only in 12h mode.
     // Fixed X: 4 px to the right of the widest time string ("12:59"), so the dot never
