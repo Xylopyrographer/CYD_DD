@@ -244,13 +244,17 @@ void drawDigitalClock( int h, int m, int s ) {
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
 
-    // Seconds in DSEG7 Bold 24pt (GFX free font). Height ~47 px.
+    // Seconds in DSEG7 Bold 15pt (GFX free font).
     // setFreeFont with MC_DATUM centres on the given point — clear a fixed rect first
     // since free fonts don't support per-glyph bg fill via setTextColor(fg, bg).
     tft.setFreeFont( &DSEG7Bold15pt7b );
     int secFontH = tft.fontHeight();
     int secFontW = tft.textWidth( "00" );
-    int secY = clockY + 45 + secFontH / 2;  // baseline-corrected centre point
+    // Centre seconds exactly between the bottom of HH:MM and the top of the date line
+    // (date drawn at y=175, font 2, 16px → top of date = 175 - fontHeight(2)/2).
+    int bottomHHMM = clockY + fh7 / 2;
+    int topDate    = 175 - tft.fontHeight( 2 ) / 2;
+    int secY       = ( bottomHHMM + topDate ) / 2;
     char secStr[ 3 ];
     sprintf( secStr, "%02d", s );
     tft.fillRect( clockX - secFontW / 2 - 2, secY - secFontH / 2, secFontW + 4, secFontH, bgColor );
