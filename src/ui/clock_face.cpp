@@ -3,7 +3,7 @@
 #include "icons.h"
 
 #include <TFT_eSPI.h>
-#include "DSEG7Bold24pt7b.h"
+#include "DSEG7Bold15pt7b.h"
 #include <time.h>
 
 #include "../data/app_state.h"
@@ -247,7 +247,7 @@ void drawDigitalClock( int h, int m, int s ) {
     // Seconds in DSEG7 Bold 24pt (GFX free font). Height ~47 px.
     // setFreeFont with MC_DATUM centres on the given point — clear a fixed rect first
     // since free fonts don't support per-glyph bg fill via setTextColor(fg, bg).
-    tft.setFreeFont( &DSEG7Bold24pt7b );
+    tft.setFreeFont( &DSEG7Bold15pt7b );
     int secFontH = tft.fontHeight();
     int secFontW = tft.textWidth( "00" );
     int secY = clockY + 45 + secFontH / 2;  // baseline-corrected centre point
