@@ -245,11 +245,10 @@ void drawDigitalClock( int h, int m, int s ) {
     }
 
     // Seconds in DSEG7 Bold 15pt (GFX free font).
-    // setFreeFont with MC_DATUM centres on the given point — clear a fixed rect first
-    // since free fonts don't support per-glyph bg fill via setTextColor(fg, bg).
+    // TFT_eSPI renders GFX font glyphs pixel-by-pixel, so setTextColor(fg, bg) fills
+    // the background per-glyph — no separate fillRect needed, no blank-frame flicker.
     tft.setFreeFont( &DSEG7Bold15pt7b );
     int secFontH = tft.fontHeight();
-    int secFontW = tft.textWidth( "00" );
     // Centre seconds exactly between the bottom of HH:MM and the top of the date line
     // (date drawn at y=175, font 2, 16px → top of date = 175 - fontHeight(2)/2).
     int bottomHHMM = clockY + fh7 / 2;
@@ -257,8 +256,7 @@ void drawDigitalClock( int h, int m, int s ) {
     int secY       = ( bottomHHMM + topDate ) / 2;
     char secStr[ 3 ];
     sprintf( secStr, "%02d", s );
-    tft.fillRect( clockX - secFontW / 2 - 2, secY - secFontH / 2, secFontW + 4, secFontH, bgColor );
-    tft.setTextColor( getSecHandColor() );
+    tft.setTextColor( getSecHandColor(), bgColor );
     tft.drawString( secStr, clockX, secY );
     tft.setTextFont( 0 );  // clear free font, restore default
 
