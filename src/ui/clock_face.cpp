@@ -3,6 +3,7 @@
 #include "icons.h"
 
 #include <TFT_eSPI.h>
+#include "DSEG7Bold24pt7b.h"
 #include "DSEG7Bold15pt7b.h"
 #include <time.h>
 
@@ -228,21 +229,24 @@ void drawDigitalClock( int h, int m, int s ) {
         sprintf( timeStr, "%02d:%02d", displayH, m ); // leading zero in 24h
     }
 
-    // Compute font 7 metrics once — used for layout of all elements below.
-    int fh7      = tft.fontHeight( 7 );
-    int maxTimeW = tft.textWidth( "12:59", 7 );
+    // Use DSEG7 Bold 24pt GFX font for HH:MM — replaces built-in Font 7 (allows
+    // LOAD_FONT7 to be removed from User_Setup.h, saving ~3413 bytes flash).
+    tft.setFreeFont( &DSEG7Bold24pt7b );
+    int fh7      = tft.fontHeight();
+    int maxTimeW = tft.textWidth( "12:59" );
 
     tft.setTextDatum( MC_DATUM );
     tft.setTextColor( clockColor, bgColor );
 
     // Redraw HH:MM only when the string changes (or a full redraw is forced).
-    // This avoids clearing + redrawing the main time every second, which causes flicker.
+    // setTextColor(fg, bg) gives per-glyph background fill — no fillRect flicker.
     static char prevTimeStr[ 6 ] = "";
     if ( forceClockRedraw || strcmp( timeStr, prevTimeStr ) != 0 ) {
-        tft.fillRect( clockX - maxTimeW / 2, clockY - fh7 / 2, maxTimeW, fh7, bgColor );
-        tft.drawString( timeStr, clockX, clockY, 7 );
+        tft.setTextColor( clockColor, bgColor );
+        tft.drawString( timeStr, clockX, clockY );
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
+    tft.setTextFont( 0 );  // clear free font before computing secY below
 
     // Seconds in DSEG7 Bold 15pt (GFX free font).
     // TFT_eSPI renders GFX font glyphs pixel-by-pixel, so setTextColor(fg, bg) fills
