@@ -3,7 +3,6 @@
 #include "icons.h"
 
 #include <TFT_eSPI.h>
-#include "DSEG7Bold24pt7b.h"
 #include "DSEG7Bold15pt7b.h"
 #include <time.h>
 
@@ -229,24 +228,20 @@ void drawDigitalClock( int h, int m, int s ) {
         sprintf( timeStr, "%02d:%02d", displayH, m ); // leading zero in 24h
     }
 
-    // Use DSEG7 Bold 24pt GFX font for HH:MM — replaces built-in Font 7 (allows
-    // LOAD_FONT7 to be removed from User_Setup.h, saving ~3413 bytes flash).
-    tft.setFreeFont( &DSEG7Bold24pt7b );
-    int fh7      = tft.fontHeight();
-    int maxTimeW = tft.textWidth( "12:59" );
+    // Compute font 7 metrics once — used for layout of all elements below.
+    int fh7      = tft.fontHeight( 7 );
+    int maxTimeW = tft.textWidth( "12:59", 7 );
 
     tft.setTextDatum( MC_DATUM );
     tft.setTextColor( clockColor, bgColor );
 
     // Redraw HH:MM only when the string changes (or a full redraw is forced).
-    // setTextColor(fg, bg) gives per-glyph background fill — no fillRect flicker.
     static char prevTimeStr[ 6 ] = "";
     if ( forceClockRedraw || strcmp( timeStr, prevTimeStr ) != 0 ) {
-        tft.setTextColor( clockColor, bgColor );
-        tft.drawString( timeStr, clockX, clockY );
+        tft.fillRect( clockX - maxTimeW / 2, clockY - fh7 / 2, maxTimeW, fh7, bgColor );
+        tft.drawString( timeStr, clockX, clockY, 7 );
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
-    tft.setTextFont( 0 );  // clear free font before computing secY below
 
     // Seconds in DSEG7 Bold 15pt (GFX free font).
     // TFT_eSPI renders GFX font glyphs pixel-by-pixel, so setTextColor(fg, bg) fills
@@ -272,7 +267,8 @@ void drawDigitalClock( int h, int m, int s ) {
     // Circles are only redrawn when isPM changes (or a full redraw is forced) to avoid
     // the every-second erase/redraw touching the HH:MM glyph area and causing flicker.
     const int circR = 5;
-    const int circX = clockX + maxTimeW / 2 + circR + 4;
+    // Clamp so the circle never clips the right screen edge when the font is wide.
+    const int circX = min( clockX + maxTimeW / 2 + circR + 4, ( int )tft.width() - circR - 1 );
     const int amY   = clockY - fh7 / 2 + circR;
     const int pmY   = clockY + fh7 / 2 - circR;
     static bool prevIsPM = !isPM;  // initialise to opposite so first call always draws
