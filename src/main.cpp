@@ -64,6 +64,7 @@ bool isWhiteTheme = false;  // NOW IT'S HERE, SO EVERYONE CAN SEE IT
 // ================= NEW VARIABLES FOR CLOCKS =================
 bool isDigitalClock = false; // false = Analog, true = Digital
 bool is12hFormat = false;    // false = 24h, true = 12h
+bool showDigitalSeconds = true; // true = show seconds on digital clock face
 bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with inverted displays
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
@@ -245,6 +246,7 @@ void setup() {
         password = deobfuscatePassword( prefs.getString( "pass", "" ) );
         isDigitalClock = prefs.getBool( "digiClock", false );
         is12hFormat = prefs.getBool( "12hFmt", false );
+        showDigitalSeconds = prefs.getBool( "showSecs", true );
 
         // FIX: Load saved theme
         themeMode = prefs.getInt( "themeMode", THEME_DARK );

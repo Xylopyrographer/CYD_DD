@@ -30,6 +30,7 @@ extern bool      forceClockRedraw;
 // Display/format state
 extern bool isDigitalClock;
 extern bool is12hFormat;
+extern bool showDigitalSeconds;
 extern bool isWhiteTheme;
 extern int  themeMode;
 
@@ -243,7 +244,7 @@ void drawDigitalClock( int h, int m, int s ) {
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
 
-    // Seconds in DSEG7 Bold 15pt (GFX free font).
+    // Seconds in DSEG7 Bold 15pt (GFX free font) — only when showDigitalSeconds is true.
     // TFT_eSPI renders GFX font glyphs pixel-by-pixel, so setTextColor(fg, bg) fills
     // the background per-glyph — no separate fillRect needed, no blank-frame flicker.
     tft.setFreeFont( &DSEG7Bold15pt7b );
@@ -253,10 +254,18 @@ void drawDigitalClock( int h, int m, int s ) {
     int bottomHHMM = clockY + fh7 / 2;
     int topDate    = 175 - tft.fontHeight( 2 ) / 2;
     int secY       = ( bottomHHMM + topDate ) / 2;
-    char secStr[ 3 ];
-    sprintf( secStr, "%02d", s );
-    tft.setTextColor( getSecHandColor(), bgColor );
-    tft.drawString( secStr, clockX, secY );
+    if ( showDigitalSeconds ) {
+        char secStr[ 3 ];
+        sprintf( secStr, "%02d", s );
+        tft.setTextColor( getSecHandColor(), bgColor );
+        tft.drawString( secStr, clockX, secY );
+    }
+    else if ( forceClockRedraw ) {
+        // Clear the seconds area when hidden (only needed on forced redraws —
+        // per-glyph bg fill keeps it clean during normal second ticks).
+        int secW = tft.textWidth( "00" );
+        tft.fillRect( clockX - secW / 2, secY - secFontH / 2, secW, secFontH, bgColor );
+    }
     tft.setTextFont( 0 );  // clear free font, restore default
 
     // AM/PM indicator — only in 12h mode.
