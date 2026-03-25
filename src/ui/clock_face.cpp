@@ -3,6 +3,7 @@
 #include "icons.h"
 
 #include <TFT_eSPI.h>
+#include "DSEG7Bold15pt7b.h"
 #include <time.h>
 
 #include "../data/app_state.h"
@@ -29,6 +30,7 @@ extern bool      forceClockRedraw;
 // Display/format state
 extern bool isDigitalClock;
 extern bool is12hFormat;
+extern bool showDigitalSeconds;
 extern bool isWhiteTheme;
 extern int  themeMode;
 
@@ -235,7 +237,6 @@ void drawDigitalClock( int h, int m, int s ) {
     tft.setTextColor( clockColor, bgColor );
 
     // Redraw HH:MM only when the string changes (or a full redraw is forced).
-    // This avoids clearing + redrawing the main time every second, which causes flicker.
     static char prevTimeStr[ 6 ] = "";
     if ( forceClockRedraw || strcmp( timeStr, prevTimeStr ) != 0 ) {
         tft.fillRect( clockX - maxTimeW / 2, clockY - fh7 / 2, maxTimeW, fh7, bgColor );
@@ -243,15 +244,29 @@ void drawDigitalClock( int h, int m, int s ) {
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
 
-    // Seconds in font 4 (26 px). Use per-glyph bg fill (setTextColor with bg colour) so
-    // the old glyph pixels are overwritten in-place — no separate fillRect needed, no flash.
-    // SS is always exactly 2 digits so width never changes.
-    // clockY + 45 keeps a safe gap below HH:MM without overlapping it.
-    int secY = clockY + 45;
-    char secStr[ 3 ];
-    sprintf( secStr, "%02d", s );
-    tft.setTextColor( getSecHandColor(), bgColor );
-    tft.drawString( secStr, clockX, secY, 4 );
+    // Seconds in DSEG7 Bold 15pt (GFX free font) — only when showDigitalSeconds is true.
+    // TFT_eSPI renders GFX font glyphs pixel-by-pixel, so setTextColor(fg, bg) fills
+    // the background per-glyph — no separate fillRect needed, no blank-frame flicker.
+    tft.setFreeFont( &DSEG7Bold15pt7b );
+    int secFontH = tft.fontHeight();
+    // Centre seconds exactly between the bottom of HH:MM and the top of the date line
+    // (date drawn at y=175, font 2, 16px → top of date = 175 - fontHeight(2)/2).
+    int bottomHHMM = clockY + fh7 / 2;
+    int topDate    = 175 - tft.fontHeight( 2 ) / 2;
+    int secY       = ( bottomHHMM + topDate ) / 2;
+    if ( showDigitalSeconds ) {
+        char secStr[ 3 ];
+        sprintf( secStr, "%02d", s );
+        tft.setTextColor( getSecHandColor(), bgColor );
+        tft.drawString( secStr, clockX, secY );
+    }
+    else if ( forceClockRedraw ) {
+        // Clear the seconds area when hidden (only needed on forced redraws —
+        // per-glyph bg fill keeps it clean during normal second ticks).
+        int secW = tft.textWidth( "00" );
+        tft.fillRect( clockX - secW / 2, secY - secFontH / 2, secW, secFontH, bgColor );
+    }
+    tft.setTextFont( 0 );  // clear free font, restore default
 
     // AM/PM indicator — only in 12h mode.
     // Fixed X: 4 px to the right of the widest time string ("12:59"), so the dot never
@@ -261,7 +276,8 @@ void drawDigitalClock( int h, int m, int s ) {
     // Circles are only redrawn when isPM changes (or a full redraw is forced) to avoid
     // the every-second erase/redraw touching the HH:MM glyph area and causing flicker.
     const int circR = 5;
-    const int circX = clockX + maxTimeW / 2 + circR + 4;
+    // Clamp so the circle never clips the right screen edge when the font is wide.
+    const int circX = min( clockX + maxTimeW / 2 + circR + 4, ( int )tft.width() - circR - 1 );
     const int amY   = clockY - fh7 / 2 + circR;
     const int pmY   = clockY + fh7 / 2 - circR;
     static bool prevIsPM = !isPM;  // initialise to opposite so first call always draws

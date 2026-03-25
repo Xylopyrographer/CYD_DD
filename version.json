@@ -1,7 +1,7 @@
 {
-  "version": "2.0.0",
-  "download_url": "https://github.com/Xylopyrographer/CYD_DD/releases/download/v2.0.0/CYD_DataDisplay_v2.0.0_R_OTA.bin",
-  "changelog": "Digital clock improvements; AM/PM indicator.",
+  "version": "2.1.0",
+  "download_url": "https://github.com/Xylopyrographer/CYD_DD/releases/download/v2.1.0/CYD_DataDisplay_v2.1.0_R_OTA.bin",
+  "changelog": "Adds digital clock seconds toggle and seconds font change.",
   "min_version": "2.0.0",
   "force_update": false
 }

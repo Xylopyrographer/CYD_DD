@@ -118,6 +118,7 @@ extern int        autoDimTempLevel;
 // Clock / time
 extern bool       isDigitalClock;
 extern bool       is12hFormat;
+extern bool       showDigitalSeconds;
 extern long       gmtOffset_sec;
 extern int        daylightOffset_sec;
 extern int        lastSec;
@@ -166,16 +167,32 @@ void handleTouch( int x, int y ) {
                 menuOffset = 0;
                 drawSettingsScreen();
             }
-            // Touch on clock area to toggle 12/24h format (DIGITAL MODE ONLY)
-            // Clock area approx x: 180-280, y: 40-130 (based on clockX, clockY, radius)
-            // clockX = 230, clockY = 85, radius = 67
-            else if ( isDigitalClock && x >= 160 && x <= 300 && y >= 20 && y <= 150 ) {
+            // Touch on HH:MM area — toggle 12/24h format (digital mode only).
+            // clockX=230, clockY=85, Font 7 height=48px → bbox y=61..109.
+            else if ( isDigitalClock && x >= 160 && x <= 300 && y >= 20 && y < 120 ) {
                 is12hFormat = !is12hFormat;
                 prefs.begin( "sys", false );
                 prefs.putBool( "12hFmt", is12hFormat );
                 prefs.end();
-                // Force redraw by clearing lastSec
-                lastSec = -1;
+                forceClockRedraw = true;
+                struct tm ti;
+                if ( getLocalTime( &ti ) ) {
+                    updateHands( ti.tm_hour, ti.tm_min, ti.tm_sec );
+                }
+                delay( TOUCH_DEBOUNCE_MS );
+            }
+            // Touch on seconds area — toggle seconds visibility (digital mode only).
+            // secY≈138, DSEG7 15pt height=29px → bbox y=124..152; use generous hit region.
+            else if ( isDigitalClock && x >= 160 && x <= 300 && y >= 120 && y <= 158 ) {
+                showDigitalSeconds = !showDigitalSeconds;
+                prefs.begin( "sys", false );
+                prefs.putBool( "showSecs", showDigitalSeconds );
+                prefs.end();
+                forceClockRedraw = true;
+                struct tm ti;
+                if ( getLocalTime( &ti ) ) {
+                    updateHands( ti.tm_hour, ti.tm_min, ti.tm_sec );
+                }
                 delay( TOUCH_DEBOUNCE_MS );
             }
             break;

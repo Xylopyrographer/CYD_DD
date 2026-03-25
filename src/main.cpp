@@ -64,11 +64,12 @@ bool isWhiteTheme = false;  // NOW IT'S HERE, SO EVERYONE CAN SEE IT
 // ================= NEW VARIABLES FOR CLOCKS =================
 bool isDigitalClock = false; // false = Analog, true = Digital
 bool is12hFormat = false;    // false = 24h, true = 12h
+bool showDigitalSeconds = true; // true = show seconds on digital clock face
 bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with inverted displays
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
-const char *FIRMWARE_VERSION = "2.0.0";  // CURRENT VERSION
+const char *FIRMWARE_VERSION = "2.1.0";  // CURRENT VERSION
 const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/Xylopyrographer/CYD_DD/main/version.json";
 const char *FIRMWARE_URL = "https://github.com/lachimalaif/DataDisplay-V1-instalator/releases/latest/download/DataDisplayCYD.ino.bin";
 
@@ -245,6 +246,7 @@ void setup() {
         password = deobfuscatePassword( prefs.getString( "pass", "" ) );
         isDigitalClock = prefs.getBool( "digiClock", false );
         is12hFormat = prefs.getBool( "12hFmt", false );
+        showDigitalSeconds = prefs.getBool( "showSecs", true );
 
         // FIX: Load saved theme
         themeMode = prefs.getInt( "themeMode", THEME_DARK );
