@@ -46,6 +46,14 @@ This project is based on the project at https://github.com/lachimalaif/DataDispl
 
 # Release Notes
 
+## v2.1.0 — 2026-03-25
+
+### New Features
+
+- **Digital clock seconds toggle** — Tapping the seconds area of the digital clock face now toggles whether seconds are shown or hidden. The preference is preserved across reboots.
+
+- **Digital clock seconds font** — The font used for the seconds digits has been replaced with one that matches the style of the `HH:MM` display.
+
 ## v2.0.0 — 2026-03-11
 
 ### New Features
