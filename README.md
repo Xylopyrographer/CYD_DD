@@ -40,7 +40,18 @@ When shown, tapping the arrow will take your directly to the FIRMWARE options sc
 
 ## Acknowledgement
 
-This project is based on the project at https://github.com/lachimalaif/DataDisplay-V1-instalator project. It has been completely refactored for maintainability and ease of feature addition.
+This project is based on the project at https://github.com/lachimalaif/DataDisplay-V1-instalator.
+
+It has been completely refactored for maintainability and ease of feature addition.
+
+---
+
+## Screen Shots
+
+![24hr_sec](./doc/images/24hr_sec.jpg)<br>24 hr clock with seconds<br><br>
+![24hr_noSec](./doc/images/24hr_noSec.jpg)<br>24 hr clock without seconds<br><br>
+![12hr.jpg](./doc/images/12hr.jpg)<br>12 hr clock with seconds. Seconds can be toggled on and off here as well.<br><br>
+![analog](./doc/images/analog.jpg)<br>Analog clock<br><br>
 
 ---
 
