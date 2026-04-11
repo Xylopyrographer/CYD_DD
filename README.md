@@ -57,6 +57,22 @@ It has been completely refactored for maintainability and ease of feature additi
 
 # Release Notes
 
+## v2.1.1 — 2026-04-11
+
+### Bug Fixes
+
+- **Time display off by +1 or +2 hours** — Several related timezone/DST bugs that could cause the clock to show the wrong time have been fixed:
+
+  - If the timezone lookup service (`timeapi.io`) returned an empty or null timezone name, the device's POSIX timezone string was silently cleared, reverting the clock to UTC. For a UTC+2 (CEST) user this showed as 2 hours behind. The device now falls back to a UTC-offset-derived rule and preserves the previously working timezone.
+
+  - When `timeapi.io` was unreachable, the hardcoded country-level fallback incorrectly overwrote the active timezone with a regional guess (e.g. all of US/Canada → Eastern Time). The device now keeps the existing timezone when the service is unavailable.
+
+  - The standard UTC offset and DST offset were stored incorrectly in NVS — the DST-inclusive offset was saved as the base offset, so the Manual timezone screen showed the wrong base hour. Both values are now stored correctly.
+
+  - In Auto region mode, the weather update (every 30 minutes) was silently overwriting a manually-set timezone. The timezone refresh is now skipped when Manual mode is active.
+
+  - On boot, the saved POSIX timezone string was unnecessarily re-derived from the IANA timezone name for any device that happened to have the Central European default string stored — even if it was legitimately set. Fixed.
+
 ## v2.1.0 — 2026-03-25
 
 ### New Features

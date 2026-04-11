@@ -22,6 +22,7 @@ extern Preferences prefs;
 extern String      posixTZ;
 extern int         lookupGmtOffset;
 extern int         lookupDstOffset;
+extern bool        regionAutoMode;
 
 extern const char *ntpServer;
 extern int         lastDay;
@@ -164,8 +165,9 @@ void fetchWeatherData() {
     }
 
     // STEP 1b: Refresh timezone from timeapi.io (every 30 min = every weather update)
-    // This automatically corrects DST transitions anywhere in the world
-    if ( lat != 0.0 || lon != 0.0 ) {
+    // This automatically corrects DST transitions anywhere in the world.
+    // Guard: only run in auto mode — manual timezone set by the user must not be overwritten.
+    if ( regionAutoMode && ( lat != 0.0 || lon != 0.0 ) ) {
         String oldPosix = posixTZ;
         detectTimezoneFromCoords( lat, lon, selectedCountry );
         // detectTimezoneFromCoords set the global posixTZ

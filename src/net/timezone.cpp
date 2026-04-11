@@ -160,11 +160,8 @@ String ianaToPostfixTZ( String iana ) {
 
 void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
     if ( WiFi.status() != WL_CONNECTED ) {
-        log_w( "[TZ-AUTO] WiFi not connected, using fallback" );
-        lookupTimezone = "Europe/Prague";
-        lookupGmtOffset = 3600;
-        lookupDstOffset = 3600;
-        posixTZ = "CET-1CEST,M3.5.0,M10.5.0/3";
+        log_w( "[TZ-AUTO] WiFi not connected, keeping existing posixTZ: %s", posixTZ.c_str() );
+        // Don't overwrite posixTZ — the saved/derived value is more accurate than any guess.
         return;
     }
 
@@ -208,9 +205,12 @@ void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
             log_d( "[TZ-AUTO] Found: %s currentOffset: %ds, hasDST: %d", ianaName.c_str(), currentOffset, hasDst );
 
             // Store data
-            lookupTimezone = ( ianaName != "" ) ? ianaName : "UTC";
-            lookupGmtOffset = currentOffset;
-            lookupDstOffset = 0;
+            // Bug fix: store the standard (non-DST) offset so the manual Regional
+            // Settings screen shows the correct base offset, and lookupDstOffset
+            // correctly reflects whether DST is currently applied.
+            lookupTimezone  = ( ianaName != "" ) ? ianaName : "UTC";
+            lookupGmtOffset = standardOffset;                          // was: currentOffset (DST-inclusive)
+            lookupDstOffset = currentOffset - standardOffset;          // was: always 0
 
             // 5. Try ianaToPostfixTZ for accurate DST rules (works for Europe, major US cities, etc.)
             String newPosix = "";
@@ -219,13 +219,15 @@ void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
             }
 
             // 6. If ianaToPostfixTZ returns unknown zone ("UTC0" for a non-UTC zone),
-            //    build POSIX string directly from the offset
-            bool isUnknownZone = ( newPosix == "UTC0" &&
+            //    OR returns an empty string (timeapi.io returned a null/empty timeZone),
+            //    build POSIX string directly from the current (DST-inclusive) offset.
+            bool isUnknownZone = ( ( newPosix == "UTC0" || newPosix == "" ) &&
                                    ianaName != "" &&
                                    ianaName.indexOf( "UTC" ) < 0 &&
                                    ianaName.indexOf( "GMT" ) < 0 );
+            bool isEmptyIana   = ( ianaName == "" );  // timeapi.io returned no zone name at all
 
-            if ( isUnknownZone ) {
+            if ( isUnknownZone || isEmptyIana ) {
                 // POSIX string has OPPOSITE sign to UTC offset
                 // UTC+7 (offset=+25200) → POSIX "UTC-7"
                 // UTC-7 (offset=-25200) → POSIX "UTC7"
@@ -242,7 +244,15 @@ void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
                 }
             }
 
-            posixTZ = newPosix;
+            // Guard: only update posixTZ if we produced a valid non-empty string.
+            // An empty newPosix (e.g. timeapi.io returned null timeZone AND currentOffset==0
+            // is indistinguishable from UTC) would silently reset the clock to UTC.
+            if ( newPosix != "" ) {
+                posixTZ = newPosix;
+            }
+            else {
+                log_w( "[TZ-AUTO] Could not derive POSIX TZ — keeping previous value: %s", posixTZ.c_str() );
+            }
             log_i( "[TZ-AUTO] POSIX TZ set to: %s", posixTZ.c_str() );
             http.end();
             return;
@@ -257,36 +267,35 @@ void detectTimezoneFromCoords( float lat, float lon, String countryHint ) {
     }
     http.end();
 
-    // Fallback if timeapi.io fails
-    log_w( "[TZ-AUTO] timeapi.io failed, using basic fallback" );
+    // Fallback if timeapi.io fails.
+    // IMPORTANT: Do NOT overwrite posixTZ here. Any country-level guess (e.g. all of
+    // US/Canada → Eastern) is coarser than what applyLocation() already set from the
+    // IANA table, and coarser than whatever was saved to NVS from a prior successful call.
+    // We only update the informational lookup* globals so callers can display them.
+    log_w( "[TZ-AUTO] timeapi.io failed — keeping existing posixTZ: %s", posixTZ.c_str() );
     if ( countryHint == "United Kingdom" || countryHint == "Ireland" || countryHint == "Portugal" ) {
-        lookupTimezone = "Europe/London";
+        lookupTimezone  = "Europe/London";
         lookupGmtOffset = 0;
         lookupDstOffset = 3600;
-        posixTZ = "GMT0BST,M3.5.0/1,M10.5.0";
     }
     else if ( countryHint == "China" ) {
-        lookupTimezone = "Asia/Shanghai";
+        lookupTimezone  = "Asia/Shanghai";
         lookupGmtOffset = 28800;
         lookupDstOffset = 0;
-        posixTZ = "CST-8";
     }
     else if ( countryHint == "Japan" ) {
-        lookupTimezone = "Asia/Tokyo";
+        lookupTimezone  = "Asia/Tokyo";
         lookupGmtOffset = 32400;
         lookupDstOffset = 0;
-        posixTZ = "JST-9";
     }
     else if ( countryHint.indexOf( "America" ) >= 0 || countryHint == "United States" || countryHint == "Canada" ) {
-        lookupTimezone = "America/New_York";
+        lookupTimezone  = "America/New_York";
         lookupGmtOffset = -18000;
         lookupDstOffset = 3600;
-        posixTZ = "EST5EDT,M3.2.0,M11.1.0";
     }
     else {
-        lookupTimezone = "Europe/Prague";
+        lookupTimezone  = "Europe/Prague";
         lookupGmtOffset = 3600;
         lookupDstOffset = 3600;
-        posixTZ = "CET-1CEST,M3.5.0,M10.5.0/3";
     }
 }

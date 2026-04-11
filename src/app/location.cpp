@@ -297,8 +297,10 @@ void loadSavedLocation() {
             selectedCountry = "";
             log_d( "[LOAD] Cleared stale Czech Republic country default (timezone: %s)", selectedTimezone.c_str() );
         }
-        // If posixTZ was not saved (old firmware version), derive it from IANA timezone
-        if ( posixTZ == "" || posixTZ == "CET-1CEST,M3.5.0,M10.5.0/3" ) {
+        // If posixTZ was not saved (old firmware upgrade path), derive it from the saved IANA zone.
+        // Checking for "" only — the previous check also matched the legitimate Prague POSIX
+        // string for users who correctly had it saved, causing an unnecessary re-derivation.
+        if ( posixTZ == "" ) {
             if ( selectedTimezone != "" ) {
                 posixTZ = ianaToPostfixTZ( selectedTimezone );
             }
