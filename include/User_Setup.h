@@ -12,7 +12,7 @@
 
 
 // Section 1. Call up the right driver file and any options for it
-#define ILI9341_DRIVER     // Standard ILI9341 driver
+#define ST7789_DRIVER      // CYD2USB (dual USB) uses ST7789; TFT_eSPI applies the 80-row CGRAM offset automatically
 // No TFT_RGB_ORDER override - ILI9341 defaults to RGB
 // No TFT_INVERSION - handled entirely in software via tft.invertDisplay()
 

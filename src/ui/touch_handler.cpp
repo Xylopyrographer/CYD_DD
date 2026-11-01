@@ -785,10 +785,10 @@ void handleTouch( int x, int y ) {
                     }
                     else {
                         drawSyncOverlay( syncErr, true );
-                        // Wait for OK tap
+                        // Wait for OK tap (pressure polling — IRQ line not trusted)
                         while ( true ) {
-                            if ( ts.tirqTouched() && ts.touched() ) {
-                                TS_Point p = ts.getPoint();
+                            TS_Point p = ts.getPoint();
+                            if ( p.z >= TOUCH_Z_THRESHOLD ) {
                                 int tx = constrain( map( p.x, touchXMin, touchXMax, 0, 320 ), 0, 319 );
                                 int ty = constrain( map( p.y, touchYMin, touchYMax, 0, 240 ), 0, 239 );
                                 if ( tx >= 110 && tx <= 210 && ty >= 134 && ty <= 158 ) {
@@ -1297,7 +1297,7 @@ void handleTouch( int x, int y ) {
                     touchYMax = prefs.getInt( "calYMax", 3900 );
                 }
                 prefs.end();
-                tft.setRotation( displayFlipped ? 3 : 1 );
+                tft.setRotation( displayFlipped ? 1 : 3 );
                 tft.fillScreen( getBgColor() );
                 drawGraphicsScreen();
                 delay( TOUCH_DEBOUNCE_MS );

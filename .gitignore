@@ -2,6 +2,8 @@
 .vscode
 .DS_Store
 *.bak
+.tools/
+*.bin
 support/
 iterations/
 bin/

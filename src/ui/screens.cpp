@@ -3,6 +3,7 @@
 #include "icons.h"
 
 #include <WiFi.h>
+#include <esp_wifi.h>
 #include <TFT_eSPI.h>
 #include <Preferences.h>
 #include <XPT2046_Touchscreen.h>
@@ -193,12 +194,25 @@ void scanWifiNetworks() {
     tft.setTextDatum( MC_DATUM );
     tft.drawString( "Scanning WiFi...", 160, 120, 2 );
 
+    // Restart the radio from scratch: after a failed connection attempt the
+    // STA driver can stay in a state where every scan silently returns 0 even
+    // though the radio works. A full WIFI_OFF -> WIFI_STA cycle clears it.
+    WiFi.setAutoReconnect( false );
+    WiFi.mode( WIFI_OFF );
+    delay( 100 );
     WiFi.mode( WIFI_STA );
-    if ( WiFi.status() != WL_CONNECTED ) {
-        WiFi.disconnect( false );
-    }
+    // Default country "01" (world-safe) only actively scans channels 1-11, so
+    // routers on channel 12/13 never show up in the list. Enable the full band.
+    esp_wifi_set_country_code( "CN", true );
+    delay( 50 );
 
     int n = WiFi.scanNetworks();
+    if ( n <= 0 ) {
+        // A scan can be cut short or report BUSY if another one just finished;
+        // one retry recovers that case.
+        delay( 400 );
+        n = WiFi.scanNetworks();
+    }
     wifiCount = 0;
 
     if ( n > 0 ) {
@@ -209,8 +223,9 @@ void scanWifiNetworks() {
             }
         }
     }
-    log_d( "[WIFI] Scan complete. Found %d networks", wifiCount );
+    log_i( "[WIFI] Scan complete. raw=%d usable=%d", n, wifiCount );
     WiFi.scanDelete();
+    WiFi.setAutoReconnect( true );
 }
 
 // ---------------------------------------------------------------------------
@@ -227,19 +242,19 @@ static void drawCalTarget( int cx, int cy, uint16_t color ) {
 
 static TS_Point waitCalTouch() {
     // Drain any held touch first
-    while ( ts.touched() ) {
+    while ( ts.getPoint().z >= TOUCH_Z_THRESHOLD ) {
         delay( 10 );
     }
     // Wait for a new touch with sufficient pressure
     TS_Point p;
     do {
-        while ( !ts.touched() ) {
+        while ( ts.getPoint().z < TOUCH_Z_THRESHOLD ) {
             delay( 10 );
         }
         delay( 40 );   // brief settle
         p = ts.getPoint();
-    } while ( p.z < 200 );
-    while ( ts.touched() ) {
+    } while ( p.z < TOUCH_Z_THRESHOLD );
+    while ( ts.getPoint().z >= TOUCH_Z_THRESHOLD ) {
         delay( 10 );    // wait for release
     }
     return p;

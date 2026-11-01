@@ -16,6 +16,7 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <esp_ota_ops.h>
+#include <esp_wifi.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <SPI.h>
@@ -57,7 +58,9 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 
 // ================= GLOBAL SETTINGS (Must be FIRST) =================
 TFT_eSPI tft = TFT_eSPI();  // pins defined in: include/User_Setup.h
-XPT2046_Touchscreen ts( T_CS, T_IRQ );
+// Polling mode (no IRQ pin): GPIO36 is input-only with no pull-up on ESP32, so the
+// IRQ line can latch low and wedge the touch state machine until reboot.
+XPT2046_Touchscreen ts( T_CS );
 Preferences prefs;
 bool isWhiteTheme = false;  // NOW IT'S HERE, SO EVERYONE CAN SEE IT
 
@@ -199,7 +202,7 @@ extern const int MENU_ITEM_GAP = 8;
 extern const int MENU_ITEM_SPACING = MENU_ITEM_HEIGHT + MENU_ITEM_GAP;
 
 String ssid, password, selectedSSID, passwordBuffer;
-extern const int MAX_NETWORKS = 20;
+extern const int MAX_NETWORKS = 30;
 String wifiSSIDs[ MAX_NETWORKS ];
 int wifiCount = 0, wifiOffset = 0;
 bool keyboardNumbers = false;
@@ -294,7 +297,7 @@ void setup() {
 
     // ===== TFT LCD INITIALIZATION =====
     tft.init();
-    tft.setRotation( displayFlipped ? 3 : 1 );
+    tft.setRotation( displayFlipped ? 1 : 3 );
 
     // NOTE: ILI9341 (original CYD) does NOT have a hardware-inverted display.
     // invertColors=false → normal display, invertColors=true → inverted display.
@@ -340,6 +343,10 @@ void setup() {
         showWifiConnectingScreen( ssid );
 
         WiFi.mode( WIFI_STA );
+        // Default country "01" (world-safe) only actively scans channels 1-11,
+        // so routers on channel 12/13 (common in CN/EU) are invisible. Enable
+        // the full 2.4 GHz band before any scan or connect.
+        esp_wifi_set_country_code( "CN", true );
         WiFi.begin( ssid.c_str(), password.c_str() );
 
         unsigned long start = millis();
@@ -411,15 +418,53 @@ void loop() {
         }
 
         static unsigned long lastReconnectAttempt = 0;
-        if ( millis() - lastReconnectAttempt > WIFI_RECONNECT_INTERVAL ) {
+        // Never fire the periodic reconnect while the user is on a WiFi
+        // configuration screen: a background re-association aborts scans and
+        // manual connect attempts made from those screens.
+        bool inWifiConfigScreen = ( currentState == WIFICONFIG || currentState == KEYBOARD || currentState == SSID_INPUT );
+        if ( !inWifiConfigScreen && millis() - lastReconnectAttempt > WIFI_RECONNECT_INTERVAL ) {
             log_i( "WIFI: Attempting reconnect..." );
             WiFi.reconnect();
             lastReconnectAttempt = millis();
         }
     }
 
-    // 2. TOUCH HANDLING
-    if ( ts.touched() ) {
+    // 2. TOUCH HANDLING — pressure polling.
+    // Do NOT gate on ts.touched() (the PENIRQ line on GPIO36): that pin is
+    // input-only with no pull-up, and the XPT2046 can latch it so touch dies
+    // until reboot while the rest of the firmware keeps running. Polling the
+    // controller directly and gating on Z pressure works regardless of the
+    // IRQ pin state.
+    static uint16_t touchStuckCount = 0;
+
+    TS_Point p = ts.getPoint();
+    bool touchActive = ( p.z >= TOUCH_Z_THRESHOLD );
+
+    // DEBUG: heartbeat so we can tell dead touch from a wedged controller
+    static unsigned long lastTouchPoll = 0;
+    if ( millis() - lastTouchPoll > 2000 ) {
+        lastTouchPoll = millis();
+        log_i( "[TOUCHPOLL] z=%d stuck=%u state=%d", p.z, touchStuckCount, currentState );
+    }
+
+    if ( touchActive ) {
+        // Watchdog: a latched-up XPT2046 can report pressure with invalid
+        // (0,0) coordinates forever. Re-initialise it in place instead of
+        // forcing the user to power-cycle the board.
+        if ( p.x == 0 && p.y == 0 ) {
+            if ( ++touchStuckCount > 40 ) {
+                touchStuckCount = 0;
+                log_w( "[TOUCH] Watchdog: controller latched, re-initialising" );
+                ts.begin();
+                ts.setRotation( 1 );
+                lastTouchTime = millis();
+                return;
+            }
+        }
+        else {
+            touchStuckCount = 0;
+        }
+
         if ( millis() - lastTouchTime < TOUCH_DEBOUNCE_MS ) {
             return;
         }
@@ -430,7 +475,6 @@ void loop() {
             backlightCancelDim();
         }
 
-        TS_Point p = ts.getPoint();
         // Cal values already encode orientation (flipped set has min/max reversed)
         int x = map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH  );
         int y = map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
