@@ -72,9 +72,8 @@ bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with i
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
-const char *FIRMWARE_VERSION = "2.1.1";  // CURRENT VERSION
-const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/Xylopyrographer/CYD_DD/main/version.json";
-const char *FIRMWARE_URL = "https://github.com/lachimalaif/DataDisplay-V1-instalator/releases/latest/download/DataDisplayCYD.ino.bin";
+const char *FIRMWARE_VERSION = "2.2.0";  // CURRENT VERSION
+const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/StarGZZ/CYD_DD/main/version.json";
 
 String availableVersion = "";   // Available version from GitHub
 String downloadURL = "";        // Firmware download URL (from version.json)
@@ -123,8 +122,8 @@ bool initialWeatherFetched = false;
 
 ForecastData forecast[ 2 ];
 // Forecast day name variables
-String forecastDay1Name = "Monday";    // Tomorrow
-String forecastDay2Name = "Tuesday";   // The day after tomorrow
+String forecastDay1Name = "星期一";    // Tomorrow
+String forecastDay2Name = "星期二";   // The day after tomorrow
 
 int moonPhaseVal = 0;
 

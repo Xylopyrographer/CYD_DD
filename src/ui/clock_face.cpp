@@ -1,4 +1,5 @@
 #include "clock_face.h"
+#include "cjk_text.h"
 #include "theme.h"
 #include "icons.h"
 
@@ -114,7 +115,7 @@ void drawClockStatic() {
         float angle = ( h * 30 - 90 ) * DEGTORAD_CF;
         int x = clockX + cos( angle ) * ( radius - 22 );
         int y = clockY + sin( angle ) * ( radius - 22 );
-        tft.drawString( String( h ), x, y );
+        cjkDraw( String( h ), x, y );
     }
 }
 
@@ -141,18 +142,18 @@ void drawDateAndWeek( const struct tm *ti ) {
     tft.fillRect( 155, 160, 165, 80, getBgColor() );
 
     char dateBuf[ 30 ];
-    strftime( dateBuf, sizeof( dateBuf ), "%B %d, %Y", ti );
-    tft.drawString( String( dateBuf ), clockX, 175, 2 );
+    strftime( dateBuf, sizeof( dateBuf ), "%Y年%m月%d日", ti );
+    cjkDraw( String( dateBuf ), clockX, 175, 2 );
 
     int weekNum = 0;
     char weekBuf[ 20 ];
     strftime( weekBuf, sizeof( weekBuf ), "%V", ti );
     weekNum = atoi( weekBuf );
 
-    const char *dayNames[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+    const char *dayNames[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
     String dayStr = String( dayNames[ ti->tm_wday ] );
-    String weekStr = "Week " + String( weekNum ) + ", " + dayStr;
-    tft.drawString( weekStr, clockX, 193, 2 );
+    String weekStr = "第" + String( weekNum ) + "周 " + dayStr;
+    cjkDraw( weekStr, clockX, 193, 2 );
 
     if ( cityName != "" ) {
         if ( themeMode == THEME_YELLOW ) {
@@ -161,7 +162,7 @@ void drawDateAndWeek( const struct tm *ti ) {
         else {
             tft.setTextColor( TFT_SKYBLUE, getBgColor() );
         }
-        tft.drawString( cityName, clockX, 211, 2 );
+        cjkDraw( cityName, clockX, 211, 2 );
     }
 
     // Holiday line takes priority; nameday shown only for Czech Republic when no holiday
@@ -174,7 +175,7 @@ void drawDateAndWeek( const struct tm *ti ) {
             holidayColor = isWhiteTheme ? TFT_DARKGREEN : TFT_RED;  // red on dark themes
         }
         tft.setTextColor( holidayColor, getBgColor() );
-        tft.drawString( todayHoliday, clockX, 227, 1 );
+        cjkDraw( todayHoliday, clockX, 227, 1 );
     }
     else if ( namedayValid && todayNameday != "--" && selectedCountry == "Czech Republic" ) {
         uint16_t namedayColor;
@@ -185,7 +186,7 @@ void drawDateAndWeek( const struct tm *ti ) {
             namedayColor = isWhiteTheme ? TFT_DARKGREEN : TFT_ORANGE;
         }
         tft.setTextColor( namedayColor, getBgColor() );
-        tft.drawString( "Nameday: " + todayNameday, clockX, 227, 1 );
+        cjkDraw( "命名日: " + todayNameday, clockX, 227, 1 );
     }
     else {
         // Clear the line if neither applies (e.g. country changed)
@@ -240,7 +241,7 @@ void drawDigitalClock( int h, int m, int s ) {
     static char prevTimeStr[ 6 ] = "";
     if ( forceClockRedraw || strcmp( timeStr, prevTimeStr ) != 0 ) {
         tft.fillRect( clockX - maxTimeW / 2, clockY - fh7 / 2, maxTimeW, fh7, bgColor );
-        tft.drawString( timeStr, clockX, clockY, 7 );
+        cjkDraw( timeStr, clockX, clockY, 7 );
         strncpy( prevTimeStr, timeStr, sizeof( prevTimeStr ) );
     }
 
@@ -258,7 +259,7 @@ void drawDigitalClock( int h, int m, int s ) {
         char secStr[ 3 ];
         sprintf( secStr, "%02d", s );
         tft.setTextColor( getSecHandColor(), bgColor );
-        tft.drawString( secStr, clockX, secY );
+        cjkDraw( secStr, clockX, secY );
     }
     else if ( forceClockRedraw ) {
         // Clear the seconds area when hidden (only needed on forced redraws —
@@ -378,7 +379,7 @@ void drawWeatherSection() {
     if ( !initialWeatherFetched ) {
         tft.setTextColor( txt, bg );
         tft.setTextDatum( MC_DATUM );
-        tft.drawString( "Loading...", 75, 120 );
+        cjkDraw( "加载中...", 75, 120 );
         return;
     }
 
@@ -391,15 +392,15 @@ void drawWeatherSection() {
     float dispTemp = weatherUnitF ? ( currentTemp * 9.0 / 5.0 + 32 ) : currentTemp;
     String unit = weatherUnitF ? "F" : "C";
     String tempStr = String( ( int )dispTemp );
-    tft.drawString( tempStr, 45, 15 );
+    cjkDraw( tempStr, 45, 15 );
 
     int tempWidth = tft.textWidth( tempStr );
     drawDegreeCircle( 45 + tempWidth + 5, 20, 3, txtContrast );
-    tft.drawString( unit, 45 + tempWidth + 12, 15 );
+    cjkDraw( unit, 45 + tempWidth + 12, 15 );
 
     tft.setFreeFont( &FreeSans9pt7b );
     tft.setTextColor( txt, bg );
-    tft.drawString( getWeatherDesc( weatherCode ), 45, 48 );
+    cjkDraw( getWeatherDesc( weatherCode ), 45, 48 );
 
     tft.setFreeFont( NULL );
     tft.setTextColor( txt, bg );
@@ -438,7 +439,7 @@ void drawWeatherSection() {
     // --- 2. Forecast ---
     tft.setTextColor( txt, bg );
     tft.setFreeFont( NULL );
-    tft.drawString( "Forecast:", 5, 128 );
+    cjkDraw( "预报:", 5, 128 );
 
     drawWeatherIconVectorSmall( forecast[ 0 ].code, 8, 138 );
     tft.setTextDatum( ML_DATUM );
@@ -446,7 +447,7 @@ void drawWeatherSection() {
     tft.setTextColor( txt, bg );
     int day1x = 70;
     int day1y = 138;
-    tft.drawString( forecastDay1Name, day1x, day1y );
+    cjkDraw( forecastDay1Name, day1x, day1y );
 
     tft.setTextColor( txtContrast, bg );
     float fMin1 = weatherUnitF ? ( forecast[ 0 ].tempMin * 9.0 / 5.0 + 32 ) : forecast[ 0 ].tempMin;
@@ -454,18 +455,18 @@ void drawWeatherSection() {
     String tempMin1 = String( ( int )fMin1 );
     String tempMax1 = String( ( int )fMax1 );
     String tempRangeOnly1 = tempMin1 + "/" + tempMax1;
-    tft.drawString( tempRangeOnly1, day1x, day1y + 13 );
+    cjkDraw( tempRangeOnly1, day1x, day1y + 13 );
     int tempWidth1 = tft.textWidth( tempRangeOnly1 );
     int degreeX1 = day1x + tempWidth1 + 3;
     int degreeY1 = day1y + 8;
     drawDegreeCircle( degreeX1, degreeY1, 1, txtContrast );
-    tft.drawString( unit, degreeX1 + 4, day1y + 13 );
+    cjkDraw( unit, degreeX1 + 4, day1y + 13 );
 
     drawWeatherIconVectorSmall( forecast[ 1 ].code, 8, 170 );
     tft.setTextColor( txt, bg );
     int day2x = 70;
     int day2y = 170;
-    tft.drawString( forecastDay2Name, day2x, day2y );
+    cjkDraw( forecastDay2Name, day2x, day2y );
 
     tft.setTextColor( txtContrast, bg );
     float fMin2 = weatherUnitF ? ( forecast[ 1 ].tempMin * 9.0 / 5.0 + 32 ) : forecast[ 1 ].tempMin;
@@ -473,12 +474,12 @@ void drawWeatherSection() {
     String tempMin2 = String( ( int )fMin2 );
     String tempMax2 = String( ( int )fMax2 );
     String tempRangeOnly2 = tempMin2 + "/" + tempMax2;
-    tft.drawString( tempRangeOnly2, day2x, day2y + 13 );
+    cjkDraw( tempRangeOnly2, day2x, day2y + 13 );
     int tempWidth2 = tft.textWidth( tempRangeOnly2 );
     int degreeX2 = day2x + tempWidth2 + 3;
     int degreeY2 = day2y + 8;
     drawDegreeCircle( degreeX2, degreeY2, 1, txtContrast );
-    tft.drawString( unit, degreeX2 + 4, day2y + 13 );
+    cjkDraw( unit, degreeX2 + 4, day2y + 13 );
 
     tft.setTextColor( txt, bg );
     tft.drawFastHLine( 5, 200, 145, TFT_DARKGREY );
@@ -491,11 +492,11 @@ void drawWeatherSection() {
 
         tft.setTextColor( txt, bg );
         tft.setFreeFont( NULL );
-        tft.drawString( "Moon Phase:", 5, 210 );
+        cjkDraw( "月相:", 5, 210 );
 
-        String phaseNames[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"};
+        String phaseNames[] = {"新月", "娥眉月", "上弦月", "盈凸月", "满月", "亏凸月", "下弦月", "残月"};
         if ( phase >= 0 && phase <= 7 ) {
-            tft.drawString( phaseNames[ phase ], 5, 222 );
+            cjkDraw( phaseNames[ phase ], 5, 222 );
         }
 
         int mx = 120;

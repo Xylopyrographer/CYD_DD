@@ -1,6 +1,7 @@
 #include <XPT2046_Touchscreen.h>
 
 #include "touch_handler.h"
+#include "cjk_text.h"
 #include "theme.h"
 #include "icons.h"
 #include "clock_face.h"
@@ -1147,7 +1148,7 @@ void handleTouch( int x, int y ) {
                     tft.fillScreen( TFT_BLACK );
                     tft.setTextColor( TFT_WHITE );
                     tft.setTextDatum( MC_DATUM );
-                    tft.drawString( "CHECKING...", 160, 100, 2 );
+                    cjkDraw( "正在检查...", 160, 100, 2 );
 
                     checkForUpdate();
 

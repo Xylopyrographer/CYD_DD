@@ -47,52 +47,52 @@ extern bool         initialWeatherFetched;
 
 String getWeatherDesc( int code ) {
     if ( code == 0 ) {
-        return "Clear";
+        return "晴";
     }
     if ( code <= 3 ) {
-        return "Cloudy";
+        return "多云";
     }
     if ( code <= 48 ) {
-        return "Fog";
+        return "雾";
     }
     if ( code <= 67 ) {
-        return "Rain";
+        return "雨";
     }
     if ( code <= 77 ) {
-        return "Snow";
+        return "雪";
     }
     if ( code <= 82 ) {
-        return "Showers";
+        return "阵雨";
     }
     if ( code <= 99 ) {
-        return "Storm";
+        return "雷雨";
     }
-    return "Unknown";
+    return "未知";
 }
 
 String getWindDir( int deg ) {
     if ( deg >= 337 || deg < 22 ) {
-        return "N";
+        return "北";
     }
     if ( deg < 67 ) {
-        return "NE";
+        return "东北";
     }
     if ( deg < 112 ) {
-        return "E";
+        return "东";
     }
     if ( deg < 157 ) {
-        return "SE";
+        return "东南";
     }
     if ( deg < 202 ) {
-        return "S";
+        return "南";
     }
     if ( deg < 247 ) {
-        return "SW";
+        return "西南";
     }
     if ( deg < 292 ) {
-        return "W";
+        return "西";
     }
-    return "NW";
+    return "西北";
 }
 
 // ============================================
@@ -195,7 +195,7 @@ void fetchWeatherData() {
     struct tm *timeinfo = localtime( &now );
 
     if ( timeinfo ) {
-        const char *dayAbbr[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        const char *dayAbbr[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
         int tomorrowWday = ( timeinfo->tm_wday + 1 ) % 7;
         forecastDay1Name = dayAbbr[ tomorrowWday ];
         int afterTomorrowWday = ( timeinfo->tm_wday + 2 ) % 7;

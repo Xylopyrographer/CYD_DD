@@ -1,7 +1,7 @@
 {
-  "version": "2.1.1",
-  "download_url": "https://github.com/Xylopyrographer/CYD_DD/releases/download/v2.1.1/CYD_DataDisplay_v2.1.1_R_OTA.bin",
-  "changelog": "Fix timezone/DST bugs: guard against empty posixTZ from API failure, correct standard vs DST offset storage, prevent weather update from overwriting manual timezone.",
+  "version": "2.2.0",
+  "download_url": "https://github.com/StarGZZ/CYD_DD/releases/download/v2.2.0/CYD_DataDisplay_v2.2.0_R_OTA.bin",
+  "changelog": "Full Chinese UI (CJK bitmap font subset), touch pressure-polling fix (no more PENIRQ lockups), WiFi scan fix (radio restart + channels 12-13 + CN country code), OTA checks this fork.",
   "min_version": "2.0.0",
   "force_update": false
 }
