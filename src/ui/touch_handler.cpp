@@ -1163,7 +1163,7 @@ void handleTouch( int x, int y ) {
 
         case GRAPHICSCONFIG: {
             // ... (Theme code stays the same) ...
-            if ( x >= 20 && x <= 70 && y >= 65 && y <= 95 ) {
+            if ( x >= 4 && x <= 36 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_DARK;
                 isWhiteTheme = false;
                 prefs.begin( "sys", false );
@@ -1175,7 +1175,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 80 && x <= 130 && y >= 65 && y <= 95 ) {
+            if ( x >= 43 && x <= 75 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_WHITE;
                 isWhiteTheme = true;
                 prefs.begin( "sys", false );
@@ -1187,7 +1187,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 140 && x <= 190 && y >= 65 && y <= 95 ) {
+            if ( x >= 82 && x <= 114 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_BLUE;
                 prefs.begin( "sys", false );
                 prefs.putInt( "themeMode", themeMode );
@@ -1197,7 +1197,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 200 && x <= 250 && y >= 65 && y <= 95 ) {
+            if ( x >= 121 && x <= 153 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_YELLOW;
                 prefs.begin( "sys", false );
                 prefs.putInt( "themeMode", themeMode );
@@ -1207,9 +1207,36 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
+            if ( x >= 160 && x <= 192 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_WOOD;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();   // repaints bg incl. wood grain itself
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
+            if ( x >= 199 && x <= 231 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_TECH;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
+            if ( x >= 238 && x <= 270 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_CARD;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
 
             // === NEW INVERT BUTTON ===
-            if ( x >= 260 && x <= 310 && y >= 65 && y <= 95 ) {
+            if ( x >= 277 && x <= 309 && y >= 65 && y <= 95 ) {
                 log_d( "[INVERT] Toggle: %s -> %s", invertColors ? "TRUE" : "FALSE", !invertColors ? "TRUE" : "FALSE" );
                 invertColors = !invertColors;
 
@@ -1268,6 +1295,10 @@ void handleTouch( int x, int y ) {
             // Oblast: x >= 200, y cca 115-143
             if ( x >= 200 && x <= 310 && y >= 115 && y <= 145 ) {
                 isDigitalClock = !isDigitalClock;
+                // WOOD theme is always analog (user request)
+                if ( themeMode == THEME_WOOD ) {
+                    isDigitalClock = false;
+                }
                 prefs.begin( "sys", false );
                 prefs.putBool( "digiClock", isDigitalClock );
                 prefs.end();

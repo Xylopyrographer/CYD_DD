@@ -72,7 +72,7 @@ bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with i
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
-const char *FIRMWARE_VERSION = "2.2.0";  // CURRENT VERSION
+const char *FIRMWARE_VERSION = "2.2.1";  // CURRENT VERSION
 const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/StarGZZ/CYD_DD/main/version.json";
 
 String availableVersion = "";   // Available version from GitHub
@@ -253,7 +253,14 @@ void setup() {
         // FIX: Load saved theme
         themeMode = prefs.getInt( "themeMode", THEME_DARK );
         isWhiteTheme = prefs.getBool( "theme", false );
-        invertColors = prefs.getBool( "invertColors", false );
+        // The vintage WOOD face is always analog (user request) — other themes
+        // keep the user's analog/digital choice
+        if ( themeMode == THEME_WOOD ) {
+            isDigitalClock = false;
+        }
+        // Force normal colours — inversion was toggled accidentally via touch
+        invertColors = false;
+        prefs.putBool( "invertColors", false );
         displayFlipped = prefs.getBool( "dispFlip", false );
 
         // Load OTA settings
@@ -515,6 +522,9 @@ void loop() {
                     }
                     else if ( themeMode == THEME_YELLOW ) {
                         fillGradientVertical( 0, 0, 320, 240, yellowDark, yellowLight );
+                    }
+                    else if ( themeMode == THEME_WOOD ) {
+                        drawWoodTexture( 0, 0, 320, 240 );
                     }
 
                     drawWeatherSection();

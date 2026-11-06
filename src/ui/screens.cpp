@@ -1143,59 +1143,50 @@ void drawFirmwareScreen() {
 
 void drawGraphicsScreen() {
     tft.fillScreen( getBgColor() );
+    if ( themeMode == THEME_WOOD ) {
+        drawWoodTexture( 0, 0, tft.width(), tft.height() );
+    }
     tft.setTextColor( getTextColor() );
     tft.setTextDatum( MC_DATUM );
     cjkDraw( "显示设置", 160, 30, 4 );
 
-    // === THEMES ===
+    // === THEMES — 8 compact slots in one row (32 px wide) ===
     cjkDraw( "主题", 135, 50, 2 );
+    const int tbY = 65, tbW = 32, tbH = 30, tbP = 39;
+    auto drawThemeBtn = [ & ]( int slot, const char *label, bool cjk, int mode,
+                               uint16_t border, uint16_t active ) {
+        int x = 4 + slot * tbP;
+        tft.drawRoundRect( x - 1, tbY - 1, tbW + 2, tbH + 2, 4, border );
+        tft.drawRoundRect( x - 2, tbY - 2, tbW + 4, tbH + 4, 4, border );
+        tft.fillRoundRect( x, tbY, tbW, tbH, 3, themeMode == mode ? active : TFT_DARKGREY );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( TFT_BLACK );
+        if ( cjk ) {
+            cjkDraw( label, x + tbW / 2, tbY + tbH / 2, 1 );
+        }
+        else {
+            tft.drawString( label, x + tbW / 2, tbY + tbH / 2, 1 );
+        }
+        tft.setTextColor( getTextColor() );
+    };
 
-    // BLACK Theme
-    tft.drawRoundRect( 20, 65, 50, 30, 4, TFT_BLACK );
-    tft.drawRoundRect( 19, 64, 52, 32, 4, TFT_BLACK );
-    tft.fillRoundRect( 21, 66, 48, 28, 3, themeMode == THEME_DARK ? TFT_WHITE : TFT_DARKGREY );
-    tft.setTextColor( TFT_BLACK );
-    cjkDraw( "黑", 45, 78, 1 );
-    tft.setTextColor( getTextColor() );
+    drawThemeBtn( 0, "黑",   true,  THEME_DARK,   TFT_BLACK, TFT_WHITE );
+    drawThemeBtn( 1, "白",   true,  THEME_WHITE,  TFT_WHITE, TFT_WHITE );
+    drawThemeBtn( 2, "蓝",   true,  THEME_BLUE,   0x0010,    0x07FF );
+    drawThemeBtn( 3, "黄",   true,  THEME_YELLOW, 0xCC00,    0xFFE0 );
+    drawThemeBtn( 4, "Wood", false, THEME_WOOD,   0x8B46,    0xC509 );
+    drawThemeBtn( 5, "科技", true,  THEME_TECH,   0x26DD,    0x26DD );
+    drawThemeBtn( 6, "卡片", true,  THEME_CARD,   0x1CAC,    0x1CAC );
 
-    // WHITE Theme
-    tft.drawRoundRect( 80, 65, 50, 30, 4, TFT_WHITE );
-    tft.drawRoundRect( 79, 64, 52, 32, 4, TFT_WHITE );
-    tft.fillRoundRect( 81, 66, 48, 28, 3, themeMode == THEME_WHITE ? TFT_WHITE : TFT_DARKGREY );
-    tft.setTextColor( TFT_BLACK );
-    cjkDraw( "白", 105, 78, 1 );
-    tft.setTextColor( getTextColor() );
-
-    // BLUE Theme
-    tft.drawRoundRect( 140, 65, 50, 30, 4, 0x0010 );
-    tft.drawRoundRect( 139, 64, 52, 32, 4, 0x0010 );
-    tft.fillRoundRect( 141, 66, 48, 28, 3, themeMode == THEME_BLUE ? 0x07FF : TFT_DARKGREY );
-    tft.setTextColor( 0x0010 );
-    cjkDraw( "蓝", 165, 78, 1 );
-    tft.setTextColor( getTextColor() );
-
-    // YELLOW Theme
-    tft.drawRoundRect( 200, 65, 50, 30, 4, 0xCC00 );
-    tft.drawRoundRect( 199, 64, 52, 32, 4, 0xCC00 );
-    tft.fillRoundRect( 201, 66, 48, 28, 3, themeMode == THEME_YELLOW ? 0xFFE0 : TFT_DARKGREY );
-    tft.setTextColor( TFT_BLACK );
-    cjkDraw( "黄", 225, 78, 1 );
-    tft.setTextColor( getTextColor() );
-
-    // === INVERT BUTTON ===
-    tft.setTextColor( getTextColor() );
+    // INVERT toggle — last slot
+    int invX = 4 + 7 * tbP;
+    uint16_t invB = invertColors ? TFT_GREEN : TFT_DARKGREY;
+    tft.drawRoundRect( invX - 1, tbY - 1, tbW + 2, tbH + 2, 4, invB );
+    tft.drawRoundRect( invX - 2, tbY - 2, tbW + 4, tbH + 4, 4, invB );
+    tft.fillRoundRect( invX, tbY, tbW, tbH, 3, invertColors ? TFT_GREEN : TFT_DARKGREY );
     tft.setTextDatum( MC_DATUM );
-    cjkDraw( "反色", 285, 50, 2 );
-
-    // Invert button - same style as themes
-    uint16_t invertBorderColor = invertColors ? TFT_GREEN : TFT_DARKGREY;
-    uint16_t invertFillColor = invertColors ? TFT_GREEN : TFT_DARKGREY;
-
-    tft.drawRoundRect( 260, 65, 50, 30, 4, invertBorderColor );
-    tft.drawRoundRect( 259, 64, 52, 32, 4, invertBorderColor );
-    tft.fillRoundRect( 261, 66, 48, 28, 3, invertFillColor );
     tft.setTextColor( TFT_BLACK );
-    cjkDraw( "反转", 285, 78, 1 );
+    cjkDraw( "反转", invX + tbW / 2, tbY + tbH / 2, 1 );
     tft.setTextColor( getTextColor() );
 
     // === DISPLAY BRIGHTNESS SLIDER (compact) ===
@@ -1233,6 +1224,15 @@ void drawGraphicsScreen() {
     }
     if ( themeMode == THEME_YELLOW ) {
         activeColor = yellowDark;
+    }
+    if ( themeMode == THEME_WOOD ) {
+        activeColor = getBrassColor();
+    }
+    if ( themeMode == THEME_TECH ) {
+        activeColor = 0x26DD;      // cyan accent
+    }
+    if ( themeMode == THEME_CARD ) {
+        activeColor = 0x1CAC;      // navy accent
     }
 
     tft.drawRect( swX, swY, swW, swH, getTextColor() );

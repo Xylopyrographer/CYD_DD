@@ -65,6 +65,73 @@ extern const unsigned char icon_sunset[];
 static constexpr float DEGTORAD_CF = ( float )( PI / 180.0 );
 
 // ---------------------------------------------------------------------------
+// THEME_TECH (dark tech) / THEME_CARD (light cards) — digital-only faces
+// ---------------------------------------------------------------------------
+static bool isTechTheme() {
+    return themeMode == THEME_TECH;
+}
+
+static bool isCardTheme() {
+    return themeMode == THEME_CARD;
+}
+
+static bool isDigitalOnlyTheme() {
+    return isTechTheme() || isCardTheme();
+}
+
+// Palette (values go through panelColor() — this panel swaps R/B)
+static uint16_t techCyan()   { return panelColor( 0x2BD9E8 ); }
+static uint16_t techCard()   { return panelColor( 0x1B1E22 ); }
+static uint16_t techBorder() { return panelColor( 0x3A4046 ); }
+static uint16_t techGray()   { return panelColor( 0x8A939B ); }
+static uint16_t techWhite()  { return panelColor( 0xF2F5F7 ); }
+
+static uint16_t cardNavy()   { return panelColor( 0x1F3A66 ); }
+static uint16_t cardWhite()  { return panelColor( 0xFFFFFF ); }
+static uint16_t cardEdge()   { return panelColor( 0xDDD6C2 ); }
+static uint16_t cardTop()    { return panelColor( 0xC7DDF2 ); }
+static uint16_t cardBottom() { return panelColor( 0xF3F7FB ); }
+
+// Vertical gradient with rounded top/bottom corners (row-interpolated).
+// Works on pre-swapped colours: interpolating the RGB565 fields of two
+// pre-swapped endpoints stays pre-swapped.
+static void gradientRoundRect( int x, int y, int w, int h, int r, uint16_t cTop, uint16_t cBot ) {
+    int tr = ( cTop >> 11 ) & 0x1F, tg = ( cTop >> 5 ) & 0x3F, tb = cTop & 0x1F;
+    int br = ( cBot >> 11 ) & 0x1F, bg_ = ( cBot >> 5 ) & 0x3F, bb = cBot & 0x1F;
+    for ( int yy = 0; yy < h; yy++ ) {
+        int inset = 0;
+        if ( yy < r ) {
+            int dy = r - yy;
+            inset = r - ( int )sqrtf( ( float )( r * r - dy * dy ) );
+        }
+        else if ( yy >= h - r ) {
+            int dy = r - ( h - 1 - yy );
+            inset = r - ( int )sqrtf( ( float )( r * r - dy * dy ) );
+        }
+        float t = ( h > 1 ) ? ( float )yy / ( h - 1 ) : 0.0f;
+        uint16_t c = ( uint16_t )( ( ( int )( tr + ( br - tr ) * t ) << 11 ) |
+                                   ( ( int )( tg + ( bg_ - tg ) * t ) << 5 ) |
+                                   ( int )( tb + ( bb - tb ) * t ) );
+        tft.drawFastHLine( x + inset, y + yy, w - 2 * inset, c );
+    }
+}
+
+// Big HH:MM — uses the 75px font 8 when it fits the given width, else 48px font 6
+static void drawBigTime( const char *str, int cx, int cy, uint16_t color, uint16_t bg, int maxW ) {
+    tft.setTextDatum( MC_DATUM );
+    tft.setTextColor( color, bg );
+    if ( tft.textWidth( str, 8 ) <= maxW ) {
+        tft.setTextFont( 8 );
+    }
+    else {
+        tft.setTextFont( 6 );
+    }
+    tft.drawString( str, cx, cy );
+    tft.setTextFont( 0 );
+    tft.setTextDatum( TL_DATUM );
+}
+
+// ---------------------------------------------------------------------------
 // Clock-face sprite  — 140×140 px, rendered off-screen then pushed atomically
 // so no intermediate state (tick erase → ticks redraw → hand redraw) is visible.
 // ---------------------------------------------------------------------------
@@ -73,17 +140,38 @@ static bool        spriteCreated = false;
 static int         spriteX = 0, spriteY = 0;  // top-left of sprite on screen
 static int         sCX = 0,     sCY = 0;       // clock centre in sprite coords
 
+// Dial geometry: the WOOD theme uses a bigger antique dial per mockup B —
+// radius ~98 centred at (211,114) so it dominates the right half
+static int dialRadius() {
+    return ( themeMode == THEME_WOOD ) ? 98 : radius;
+}
+
+static int dialCx() {
+    return ( themeMode == THEME_WOOD ) ? 211 : clockX;
+}
+
+static int dialCy() {
+    return ( themeMode == THEME_WOOD ) ? 114 : clockY;
+}
+
 static void createClockSprite() {
-    if ( spriteCreated ) {
+    static int spriteTheme = -1;           // theme the sprite was built for
+    if ( spriteCreated && spriteTheme == themeMode ) {
         return;
     }
-    int sz  = ( radius + 3 ) * 2;          // e.g. 140 for radius=67
-    spriteX = clockX - ( radius + 3 );     // 160
-    spriteY = clockY - ( radius + 3 );     // 15
-    sCX     = radius + 3;                  // 70  (centre inside sprite)
-    sCY     = radius + 3;                  // 70
+    if ( spriteCreated ) {
+        clockSprite.deleteSprite();        // theme changed → rebuild at new size
+        spriteCreated = false;
+    }
+    int R   = dialRadius();
+    int sz  = ( R + 3 ) * 2;
+    spriteX = dialCx() - ( R + 3 );
+    spriteY = dialCy() - ( R + 3 );
+    sCX     = R + 3;
+    sCY     = R + 3;
     clockSprite.setColorDepth( 16 );
     clockSprite.createSprite( sz, sz );
+    spriteTheme = themeMode;
     spriteCreated = true;
 }
 
@@ -121,15 +209,75 @@ void drawClockStatic() {
 
 void drawClockFace() {
     tft.fillScreen( getBgColor() );
+    if ( isTechTheme() ) {
+        // Short cyan tick in the top-right corner (mockup detail)
+        tft.drawFastHLine( 282, 12, 28, techCyan() );
+        forceClockRedraw = true;
+        return;
+    }
+    if ( isCardTheme() ) {
+        // Right-hand gradient time card (mockup detail)
+        gradientRoundRect( 142, 10, 172, 224, 18, cardTop(), cardBottom() );
+        tft.drawRoundRect( 142, 10, 172, 224, 18, cardEdge() );
+        forceClockRedraw = true;
+        return;
+    }
+    if ( themeMode == THEME_WOOD ) {
+        drawWoodTexture( 0, 0, tft.width(), tft.height() );
+        drawWoodFrame();
+    }
     if ( !isDigitalClock ) {
         createClockSprite();   // allocate sprite (no-op if already done)
-        tft.drawCircle( clockX, clockY, radius + 2, getTextColor() );
-        drawClockStatic();
+        if ( themeMode == THEME_WOOD ) {
+            // Vintage face: the sprite (redrawn every second) paints the whole
+            // bezel + dial with a transparent surround, so nothing is needed
+            // here — the wood grain stays visible around the clock.
+        }
+        else {
+            tft.drawCircle( clockX, clockY, radius + 2, getTextColor() );
+            drawClockStatic();
+        }
     }
     forceClockRedraw = true;
 }
 
 void drawDateAndWeek( const struct tm *ti ) {
+    // ── THEME_TECH: date under the seconds — "2025-05-28 周三" ────────────────
+    if ( isTechTheme() ) {
+        uint16_t bg = getBgColor();
+        tft.fillRect( 108, 172, 208, 30, bg );
+        char dateBuf[ 16 ];
+        strftime( dateBuf, sizeof( dateBuf ), "%Y-%m-%d", ti );
+        const char *dayCN[] = { "日", "一", "二", "三", "四", "五", "六" };
+        String s = String( dateBuf ) + " 周" + dayCN[ ti->tm_wday ];
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( techWhite(), bg );
+        cjkDraw( s, 212, 187, 2 );
+        tft.setTextDatum( TL_DATUM );
+        return;
+    }
+
+    // ── THEME_CARD: date inside the gradient card — "2024年6月2日 星期日" ─────
+    if ( isCardTheme() ) {
+        // Repaint the gradient band behind the date, then the text
+        gradientRoundRect( 150, 150, 156, 32, 0, cardTop(), cardBottom() );
+        const char *dayCN[] = { "日", "一", "二", "三", "四", "五", "六" };
+        String s = String( ti->tm_year + 1900 ) + "年" + String( ti->tm_mon + 1 ) + "月" +
+                   String( ti->tm_mday ) + "日 星期" + dayCN[ ti->tm_wday ];
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( cardNavy(), cardBottom() );
+        cjkDraw( s, 228, 166, 2 );
+        tft.setTextDatum( TL_DATUM );
+        return;
+    }
+
+    // THEME_WOOD: the mockup keeps the date in the left gold panel and the
+    // whole right side belongs to the dial sprite — nothing to draw here.
+    // (The old repaint rect at 155,160 overlapped the dial's lower half.)
+    if ( themeMode == THEME_WOOD ) {
+        return;
+    }
+
     uint16_t dateColor = getTextColor();
     if ( themeMode == THEME_YELLOW ) {
         dateColor = TFT_BLACK;
@@ -140,6 +288,9 @@ void drawDateAndWeek( const struct tm *ti ) {
     tft.setTextDatum( MC_DATUM );
 
     tft.fillRect( 155, 160, 165, 80, getBgColor() );
+    if ( themeMode == THEME_WOOD ) {
+        drawWoodTexture( 155, 160, 165, 80 );   // restore grain under the text block
+    }
 
     char dateBuf[ 30 ];
     strftime( dateBuf, sizeof( dateBuf ), "%Y年%m月%d日", ti );
@@ -158,6 +309,9 @@ void drawDateAndWeek( const struct tm *ti ) {
     if ( cityName != "" ) {
         if ( themeMode == THEME_YELLOW ) {
             tft.setTextColor( 0x0220, getBgColor() ); // Dark green
+        }
+        else if ( themeMode == THEME_WOOD ) {
+            tft.setTextColor( getBrassColor(), getBgColor() );  // brass on walnut
         }
         else {
             tft.setTextColor( TFT_SKYBLUE, getBgColor() );
@@ -300,11 +454,141 @@ void updateHands( int h, int m, int s ) {
         return;
     }
 
+    // ── THEME_TECH: huge white HH:MM + cyan seconds on the right ──────────────
+    if ( isTechTheme() ) {
+        uint16_t bg = getBgColor();
+        char timeStr[ 6 ];
+        sprintf( timeStr, "%02d:%02d", h, m );
+        static char prevTime[ 6 ] = "";
+        if ( forceClockRedraw || strcmp( timeStr, prevTime ) != 0 ) {
+            tft.fillRect( 108, 44, 208, 96, bg );
+            drawBigTime( timeStr, 212, 92, techWhite(), bg, 204 );
+            strncpy( prevTime, timeStr, sizeof( prevTime ) );
+        }
+
+        char secStr[ 3 ];
+        sprintf( secStr, "%02d", s );
+        tft.setTextDatum( MC_DATUM );
+        tft.setFreeFont( &FreeSansBold18pt7b );
+        tft.setTextColor( techCyan(), bg );
+        tft.fillRect( 178, 140, 68, 34, bg );
+        tft.drawString( secStr, 212, 158 );
+        tft.setFreeFont( NULL );
+        tft.setTextDatum( TL_DATUM );
+        forceClockRedraw = false;
+        return;
+    }
+
+    // ── THEME_CARD: navy HH:MM inside the gradient card (no seconds) ──────────
+    if ( isCardTheme() ) {
+        char timeStr[ 6 ];
+        sprintf( timeStr, "%02d:%02d", h, m );
+        static char prevTimeC[ 6 ] = "";
+        if ( forceClockRedraw || strcmp( timeStr, prevTimeC ) != 0 ) {
+            gradientRoundRect( 150, 52, 156, 92, 0, cardTop(), cardBottom() );
+            drawBigTime( timeStr, 228, 98, cardNavy(), cardBottom(), 160 );
+            strncpy( prevTimeC, timeStr, sizeof( prevTimeC ) );
+        }
+        forceClockRedraw = false;
+        return;
+    }
+
     createClockSprite();   // no-op after first call; safe even if drawClockFace() skipped
 
     uint16_t bgColor       = getBgColor();
     uint16_t mainHandColor = getTextColor();
     uint16_t secColor      = getSecHandColor();
+
+    // ── THEME_WOOD: vintage brass/cream dial with Roman numerals ──────────────
+    if ( themeMode == THEME_WOOD ) {
+        // Opaque sprite — the transparent-key push path renders colours
+        // unpredictably on this panel, so push like the other themes do.
+        clockSprite.fillSprite( bgColor );
+
+        const int  R        = dialRadius();
+        const uint16_t brass     = getBrassColor();
+        const uint16_t brassDark = getBrassDarkColor();
+        const uint16_t brassHi   = panelColor( 0xE8C87A );  // highlight brass
+        const uint16_t dial      = getDialColor();
+        const uint16_t dialShade = panelColor( 0xE3D6B8 );  // slightly aged cream ring
+        const uint16_t ink       = getInkColor();
+
+        // Bezel: thick brass ring — dark outer rim, highlight, inner fillet
+        clockSprite.fillCircle( sCX, sCY, R + 2, brassDark );
+        clockSprite.fillCircle( sCX, sCY, R, brass );
+        clockSprite.drawCircle( sCX, sCY, R - 1, brassHi );
+        clockSprite.fillCircle( sCX, sCY, R - 10, dial );
+        clockSprite.drawCircle( sCX, sCY, R - 11, brassDark );
+        clockSprite.drawCircle( sCX, sCY, R - 18, dialShade );   // aged outer band
+        clockSprite.drawCircle( sCX, sCY, R - 19, dial );
+
+        // Decorative rivets on the bezel (4 diagonals)
+        for ( int i = 0; i < 4; i++ ) {
+            float ang = ( 45 + i * 90 ) * DEGTORAD_CF;
+            int   sx  = sCX + ( int )( cos( ang ) * ( R - 5 ) );
+            int   sy  = sCY + ( int )( sin( ang ) * ( R - 5 ) );
+            clockSprite.fillCircle( sx, sy, 3, brassHi );
+            clockSprite.drawCircle( sx, sy, 3, brassDark );
+            clockSprite.drawLine( sx - 1, sy, sx + 1, sy, brassDark );  // slot
+        }
+
+        // Thin ring around the tick band (per mockup)
+        clockSprite.drawCircle( sCX, sCY, R - 20, ink );
+
+        // Tick marks on the cream dial
+        for ( int i = 0; i < 60; i++ ) {
+            float ang = ( i * 6 - 90 ) * DEGTORAD_CF;
+            if ( i % 5 == 0 ) {
+                clockSprite.drawWideLine(
+                    sCX + ( int )( cos( ang ) * ( R - 22 ) ), sCY + ( int )( sin( ang ) * ( R - 22 ) ),
+                    sCX + ( int )( cos( ang ) * ( R - 32 ) ), sCY + ( int )( sin( ang ) * ( R - 32 ) ),
+                    2, ink, ink );
+            }
+            else {
+                clockSprite.drawLine(
+                    sCX + ( int )( cos( ang ) * ( R - 22 ) ), sCY + ( int )( sin( ang ) * ( R - 22 ) ),
+                    sCX + ( int )( cos( ang ) * ( R - 27 ) ), sCY + ( int )( sin( ang ) * ( R - 27 ) ),
+                    ink );
+            }
+        }
+
+        // Roman numerals (classic IIII at 4 o'clock), refined serif
+        clockSprite.setFreeFont( &FreeSerif9pt7b );
+        clockSprite.setTextDatum( MC_DATUM );
+        clockSprite.setTextColor( ink, dial );
+        const char *romans[] = {"XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"};
+        for ( int n = 0; n < 12; n++ ) {
+            int   h   = ( n == 0 ) ? 12 : n;
+            float ang = ( h * 30 - 90 ) * DEGTORAD_CF;
+            clockSprite.drawString( romans[ n ],
+                                    sCX + ( int )( cos( ang ) * ( R - 42 ) ),
+                                    sCY + ( int )( sin( ang ) * ( R - 42 ) ) );
+        }
+        clockSprite.setFreeFont( NULL );
+
+        // Hands: slim tapered black hour/minute, thin dark second (mockup)
+        float hA = ( ( h % 12 ) + ( m / 60.0f ) ) * 30.0f - 90.0f;
+        float mA = m * 6.0f - 90.0f;
+        float sA = s * 6.0f - 90.0f;
+        clockSprite.drawWideLine( sCX, sCY,
+                                  sCX + cos( hA * DEGTORAD_CF ) * ( R - 55 ),
+                                  sCY + sin( hA * DEGTORAD_CF ) * ( R - 55 ),
+                                  4, ink, ink );
+        clockSprite.drawWideLine( sCX, sCY,
+                                  sCX + cos( mA * DEGTORAD_CF ) * ( R - 30 ),
+                                  sCY + sin( mA * DEGTORAD_CF ) * ( R - 30 ),
+                                  2, ink, ink );
+        clockSprite.drawWideLine( sCX, sCY,
+                                  sCX + cos( sA * DEGTORAD_CF ) * ( R - 18 ),
+                                  sCY + sin( sA * DEGTORAD_CF ) * ( R - 18 ),
+                                  1, ink, ink );
+        clockSprite.fillCircle( sCX, sCY, 5, brass );
+        clockSprite.drawCircle( sCX, sCY, 5, brassDark );
+        clockSprite.fillCircle( sCX, sCY, 2, ink );
+
+        clockSprite.pushSprite( spriteX, spriteY );
+        return;
+    }
 
     // ── Render full clock face into sprite then push in one write (no flicker) ──
     clockSprite.fillSprite( bgColor );
@@ -364,6 +648,7 @@ void drawWeatherSection() {
     uint16_t bg = getBgColor();
     uint16_t txt = getTextColor();
     uint16_t txtContrast = TFT_SKYBLUE;
+    uint16_t lineColor = TFT_DARKGREY;
 
     if ( themeMode == THEME_BLUE ) {
         txtContrast = TFT_YELLOW;
@@ -371,15 +656,191 @@ void drawWeatherSection() {
     else if ( themeMode == THEME_YELLOW ) {
         txtContrast = TFT_BLACK;
     }
+    else if ( themeMode == THEME_WOOD ) {
+        txtContrast = getBrassColor();     // brass accents on walnut
+        lineColor   = getBrassDarkColor();
+    }
 
     tft.fillRect( 0, 0, 155, 95, bg );
     tft.fillRect( 0, 105, 155, 100, bg );
     tft.fillRect( 0, 206, 155, 34, bg );
+    if ( themeMode == THEME_WOOD ) {
+        // Repaint the procedural grain over the cleared weather panel
+        drawWoodTexture( 0, 0, 155, 95 );
+        drawWoodTexture( 0, 105, 155, 100 );
+        drawWoodTexture( 0, 206, 155, 34 );
+    }
 
     if ( !initialWeatherFetched ) {
         tft.setTextColor( txt, bg );
         tft.setTextDatum( MC_DATUM );
         cjkDraw( "加载中...", 75, 120 );
+        return;
+    }
+
+    // ── THEME_TECH: three dark info cards with cyan accents (mockup) ─────────
+    if ( isTechTheme() ) {
+        const uint16_t cardBg = techCard();
+        const uint16_t border = techBorder();
+        const uint16_t cyan   = techCyan();
+        const uint16_t gray   = techGray();
+        const uint16_t white  = techWhite();
+
+        tft.fillRect( 0, 0, 104, 240, bg );
+
+        auto card = [ & ]( int x, int y, int w, int h ) {
+            tft.fillRoundRect( x, y, w, h, 8, cardBg );
+            tft.drawRoundRect( x, y, w, h, 8, border );
+        };
+
+        // ── TEMP card ──
+        card( 6, 8, 94, 62 );
+        tft.setTextColor( gray, cardBg );
+        tft.setTextDatum( TL_DATUM );
+        cjkDraw( "TEMP", 14, 14, 1 );
+        float dispTemp = weatherUnitF ? ( currentTemp * 9.0 / 5.0 + 32 ) : currentTemp;
+        String t = String( ( int )dispTemp );
+        tft.setFreeFont( &FreeSansBold24pt7b );
+        tft.setTextColor( white, cardBg );
+        int tw = tft.textWidth( t );
+        int x0 = 53 - ( tw + 12 ) / 2;
+        tft.drawString( t, x0, 26 );
+        tft.setFreeFont( NULL );
+        drawDegreeCircle( x0 + tw + 5, 40, 4, white );
+        tft.drawFastHLine( 16, 64, 62, cyan );
+
+        // ── WEATHER card ──
+        card( 6, 78, 94, 78 );
+        tft.setTextColor( gray, cardBg );
+        cjkDraw( "WEATHER", 14, 84, 1 );
+        drawWeatherIconVector( weatherCode, 18, 96 );
+        tft.setTextDatum( MC_DATUM );
+        tft.setTextColor( white, cardBg );
+        cjkDraw( getWeatherDesc( weatherCode ), 53, 144, 2 );
+        tft.setTextDatum( TL_DATUM );
+
+        // ── ENV card ──
+        card( 6, 164, 94, 68 );
+        tft.drawFastHLine( 8, 166, 90, cyan );
+        tft.setTextColor( gray, cardBg );
+        cjkDraw( "ENV", 14, 170, 1 );
+        tft.setTextDatum( MC_DATUM );
+        cjkDraw( "湿度", 29, 192, 1 );
+        tft.setTextColor( white, cardBg );
+        cjkDraw( String( currentHumidity ) + "%", 29, 212, 2 );
+        tft.setTextColor( gray, cardBg );
+        cjkDraw( "风速", 76, 192, 1 );
+        tft.setTextColor( white, cardBg );
+        cjkDraw( String( currentWindSpeed, 1 ) + "m/s", 76, 212, 2 );
+        tft.drawFastVLine( 52, 186, 40, border );
+        tft.setTextDatum( TL_DATUM );
+        return;
+    }
+
+    // ── THEME_CARD: two white cards — temp card + date card (mockup) ─────────
+    if ( isCardTheme() ) {
+        tft.fillRect( 0, 0, 138, 240, bg );
+
+        // Card 1: sun icon + big navy temperature
+        tft.fillRoundRect( 8, 10, 124, 68, 14, cardWhite() );
+        tft.drawRoundRect( 8, 10, 124, 68, 14, cardEdge() );
+        drawWeatherIconVector( weatherCode, 16, 26 );
+        float dispTemp = weatherUnitF ? ( currentTemp * 9.0 / 5.0 + 32 ) : currentTemp;
+        String t = String( ( int )dispTemp );
+        tft.setFreeFont( &FreeSansBold24pt7b );
+        tft.setTextColor( cardNavy(), cardWhite() );
+        tft.setTextDatum( TL_DATUM );
+        int tw = tft.textWidth( t );
+        tft.drawString( t, 58, 24 );
+        tft.setFreeFont( NULL );
+        drawDegreeCircle( 58 + tw + 5, 38, 4, cardNavy() );
+
+        // Card 2: date + weather icon
+        tft.fillRoundRect( 8, 88, 124, 104, 14, cardWhite() );
+        tft.drawRoundRect( 8, 88, 124, 104, 14, cardEdge() );
+        struct tm ti;
+        if ( getLocalTime( &ti ) ) {
+            const char *dayCN[] = { "日", "一", "二", "三", "四", "五", "六" };
+            String d = String( ti.tm_year + 1900 ) + "年" + String( ti.tm_mon + 1 ) + "月" +
+                       String( ti.tm_mday ) + "日";
+            tft.setTextDatum( TL_DATUM );
+            tft.setTextColor( cardNavy(), cardWhite() );
+            cjkDraw( d, 18, 104, 2 );
+            cjkDraw( String( "星期" ) + dayCN[ ti.tm_wday ], 18, 128, 2 );
+        }
+        drawWeatherIconVectorSmall( weatherCode, 72, 146 );
+        return;
+    }
+
+    // ── THEME_WOOD: gold-embossed panel per mockup B ─────────────────────────
+    // Left column only: icon / big temp / RH / stacked date / city.
+    // Forecast, wind, pressure, sunrise/sunset and moon are omitted (mockup).
+    if ( themeMode == THEME_WOOD ) {
+        // Repaint the full-height left column with fresh grain, then draw the panel
+        drawWoodTexture( 0, 0, 155, 240 );
+
+        const uint16_t gold  = panelColor( 0xD0A73F );   // saturated gold
+        const uint16_t goldD = panelColor( 0x403010 );   // emboss shadow
+
+        // Weather icon, top-left
+        drawWeatherIconVector( weatherCode, 8, 6 );
+
+        // Ornament helper: thin brass rule with a diamond centre
+        auto ornament = [ & ]( int y ) {
+            tft.drawFastHLine( 8, y, 42, getBrassDarkColor() );
+            tft.drawFastHLine( 62, y, 42, getBrassDarkColor() );
+            tft.fillCircle( 55, y, 3, getBrassColor() );
+            tft.drawCircle( 55, y, 3, getBrassDarkColor() );
+        };
+
+        // Big gold temperature "18°" — serif with emboss shadow
+        float dispTemp = weatherUnitF ? ( currentTemp * 9.0 / 5.0 + 32 ) : currentTemp;
+        String tempStr = String( ( int )dispTemp ) + "°";
+        tft.setTextDatum( TL_DATUM );
+        tft.setFreeFont( &FreeSerifBold24pt7b );
+        tft.setTextColor( goldD );
+        tft.drawString( tempStr, 11, 42 );
+        tft.setTextColor( gold );
+        tft.drawString( tempStr, 9, 40 );
+
+        ornament( 92 );
+
+        // Big gold humidity "65%"
+        String rhStr = String( currentHumidity ) + "%";
+        tft.setFreeFont( &FreeSerifBold18pt7b );
+        tft.setTextColor( goldD );
+        tft.drawString( rhStr, 11, 104 );
+        tft.setTextColor( gold );
+        tft.drawString( rhStr, 9, 102 );
+
+        // Small brass water droplet beside the humidity number
+        int dropX = 84, dropY = 114;
+        tft.fillCircle( dropX, dropY, 5, getBrassColor() );
+        tft.fillTriangle( dropX - 4, dropY - 3, dropX + 4, dropY - 3, dropX, dropY - 10, getBrassColor() );
+        tft.drawCircle( dropX, dropY, 5, getBrassDarkColor() );
+        tft.drawLine( dropX - 3, dropY - 4, dropX, dropY - 10, getBrassDarkColor() );
+        tft.drawLine( dropX + 3, dropY - 4, dropX, dropY - 10, getBrassDarkColor() );
+
+        ornament( 138 );
+
+        // Stacked date: WED / 5 / NOV (gold serif, centred — mockup has no city)
+        struct tm ti;
+        if ( getLocalTime( &ti ) ) {
+            const char *wd[] = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
+            const char *mo[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                                 "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+            tft.setTextDatum( MC_DATUM );
+            tft.setFreeFont( &FreeSerifBold12pt7b );
+            tft.setTextColor( gold );
+            tft.drawString( wd[ ti.tm_wday ], 52, 150 );
+            tft.setFreeFont( &FreeSerifBold24pt7b );
+            tft.drawString( String( ti.tm_mday ), 52, 178 );
+            tft.setFreeFont( &FreeSerifBold12pt7b );
+            tft.drawString( mo[ ti.tm_mon ], 52, 204 );
+        }
+        tft.setFreeFont( NULL );
+
+        drawWoodFrame();   // restore frame edge over the repainted panel
         return;
     }
 
@@ -434,7 +895,7 @@ void drawWeatherSection() {
     tft.print( sunsetTime );
 
     tft.setTextColor( txt, bg );
-    tft.drawFastHLine( 5, 120, 145, TFT_DARKGREY );
+    tft.drawFastHLine( 5, 120, 145, lineColor );
 
     // --- 2. Forecast ---
     tft.setTextColor( txt, bg );
@@ -482,7 +943,7 @@ void drawWeatherSection() {
     cjkDraw( unit, degreeX2 + 4, day2y + 13 );
 
     tft.setTextColor( txt, bg );
-    tft.drawFastHLine( 5, 200, 145, TFT_DARKGREY );
+    tft.drawFastHLine( 5, 200, 145, lineColor );
 
     // --- 3. Moon phase ---
     struct tm ti;

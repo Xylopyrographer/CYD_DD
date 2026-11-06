@@ -1,5 +1,6 @@
 .pio
 .vscode
+platformio.local.ini
 .DS_Store
 *.bak
 .tools/

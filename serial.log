@@ -1,0 +1,21 @@
+[19:12:38] E (551) esp_core_dump_flash: No co�f"յ��partition found!
+[19:12:38] E (551) esp_core_dump_flash: No core dump partition found!
+[19:12:39] [   539][I][main.cpp:233] setup(): [SETUP] === CYD Starting ===
+[19:12:39] [   545][I][main.cpp:234] setup(): [SETUP] Version: 2.2.1
+[19:12:40] [  1245][I][esp32-hal-ledc.c:288] ledcAttachChannel(): LEDC attached to pin 21 (channel 0, resolution 8)
+[19:12:40] [  1265][I][location.cpp:312] loadSavedLocation(): [LOAD] Location loaded: Guangzhou (23.1167,113.2500)
+[19:12:40] [  1276][I][main.cpp:340] setup(): [SETUP] Location loaded: Guangzhou
+[19:12:42] [  3432][I][main.cpp:364] setup(): [SETUP] WiFi connected successfully
+[19:12:46] [  7481][I][main.cpp:403] setup(): [SETUP] === Setup complete ===
+[19:12:46] [  7488][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:12:52] [ 13930][I][weather_api.cpp:256] fetchWeatherData(): [WEATHER] Data fetched successfully
+[19:12:53] [ 14105][I][ota.cpp:93] checkForUpdate(): [OTA] Checking for updates...
+[19:12:54] [ 15788][I][ota.cpp:127] checkForUpdate(): [OTA] Already up to date
+[19:12:54] [ 15818][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:12:56] [ 17836][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:12:58] [ 19842][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:13:00] [ 21848][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:13:02] [ 23854][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:13:04] [ 25860][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:13:06] [ 27867][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0
+[19:13:08] [ 29873][I][main.cpp:453] loop(): [TOUCHPOLL] z=0 stuck=0 state=0

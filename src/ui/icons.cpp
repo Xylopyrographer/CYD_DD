@@ -349,7 +349,15 @@ void drawMoonPhaseIcon( int mx, int my, int r, int phase, uint16_t textColor, ui
     }
 }
 
+// Corner indicators are hidden on themes whose mockup has clean corners
+static bool cornerIndicatorsHidden() {
+    return themeMode == THEME_WOOD || themeMode == THEME_TECH || themeMode == THEME_CARD;
+}
+
 void drawWifiIndicator() {
+    if ( cornerIndicatorsHidden() ) {
+        return;
+    }
     int wifiStatus = WiFi.status();
     uint16_t color = wifiStatus == WL_CONNECTED ? TFT_GREEN : TFT_RED;
     tft.fillCircle( 305, 20, 4, color );
@@ -357,6 +365,9 @@ void drawWifiIndicator() {
 
 // Update available indicator — upward triangle + stem, offset 4 px right of WiFi circle
 void drawUpdateIndicator() {
+    if ( cornerIndicatorsHidden() ) {
+        return;
+    }
     if ( !updateAvailable ) {
         return;
     }
@@ -374,6 +385,9 @@ void drawUpdateIndicator() {
 }
 
 void drawSettingsIcon( uint16_t color ) {
+    if ( cornerIndicatorsHidden() ) {
+        return;
+    }
     int ix = 300, iy = 220;
     int rIn = 3, rMid = 6, rOut = 8;
     tft.fillCircle( ix, iy, rMid, color );

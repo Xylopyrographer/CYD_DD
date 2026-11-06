@@ -38,3 +38,6 @@ constexpr int THEME_DARK   = 0;  // Classic dark background
 constexpr int THEME_WHITE  = 1;  // Classic white background
 constexpr int THEME_BLUE   = 2;  // Blue gradient
 constexpr int THEME_YELLOW = 3;  // Yellow gradient
+constexpr int THEME_WOOD   = 4;  // Vintage wood / brass (procedural grain, no bitmap)
+constexpr int THEME_TECH   = 5;  // Dark tech: black bg, cyan accents, three info cards
+constexpr int THEME_CARD   = 6;  // Light cards: cream bg, white cards, blue gradient time card
