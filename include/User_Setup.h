@@ -1,4 +1,4 @@
-// THIS CONFIG IS FOR THE ORIGINAL CYD (single USB port) WITH ILI9341 DISPLAY
+// THIS CONFIG IS FOR THE ORIGINAL CYD (single USB port) WITH ST7789 DISPLAY
 // [RJL] 2024-09-11 (updated 2026-02-23 for CYD1)
 //
 //                            USER DEFINED SETTINGS
@@ -12,9 +12,9 @@
 
 
 // Section 1. Call up the right driver file and any options for it
-#define ILI9341_DRIVER     // Standard ILI9341 driver
-// No TFT_RGB_ORDER override - ILI9341 defaults to RGB
-// No TFT_INVERSION - handled entirely in software via tft.invertDisplay()
+#define ST7789_DRIVER     
+#define TFT_INVERSION_OFF
+#define TFT_RGB_ORDER TFT_BGR
 
 // Section 2. Define the pins that are used to interface with the display here
 #define TFT_BL   21           // LED back-light control pin
