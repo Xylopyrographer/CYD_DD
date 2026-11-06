@@ -101,7 +101,7 @@ uint16_t getInkColor() {
 // redraw (weather panel, date block) reproduces identical rows, so patches
 // painted over the background blend seamlessly with the original full-screen
 // texture.
-static uint16_t woodRowColor( int y ) {
+uint16_t woodRowColor( int y ) {
     // Base tone oscillates very subtly between dark walnut shades — the mockup
     // shows a smooth, almost-solid dark wood, not visible stripes.
     float t = sinf( y * 0.21f ) * 0.6f + sinf( y * 0.07f + 1.3f ) * 0.4f;  // -1..1

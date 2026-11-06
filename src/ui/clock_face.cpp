@@ -140,14 +140,15 @@ static bool        spriteCreated = false;
 static int         spriteX = 0, spriteY = 0;  // top-left of sprite on screen
 static int         sCX = 0,     sCY = 0;       // clock centre in sprite coords
 
-// Dial geometry: the WOOD theme uses a bigger antique dial per mockup B —
-// radius ~98 centred at (211,114) so it dominates the right half
+// Dial geometry: the WOOD theme uses a big antique dial per mockup B —
+// radius 90 centred at (205,114): clears the right frame (inner edge ~308)
+// and leaves ~16 px of whitespace between the left column and the bezel.
 static int dialRadius() {
-    return ( themeMode == THEME_WOOD ) ? 98 : radius;
+    return ( themeMode == THEME_WOOD ) ? 90 : radius;
 }
 
 static int dialCx() {
-    return ( themeMode == THEME_WOOD ) ? 211 : clockX;
+    return ( themeMode == THEME_WOOD ) ? 205 : clockX;
 }
 
 static int dialCy() {
@@ -205,6 +206,43 @@ void drawClockStatic() {
         int y = clockY + sin( angle ) * ( radius - 22 );
         cjkDraw( String( h ), x, y );
     }
+}
+
+// Breguet-style clock hand: shaft from a tail counterweight, a solid "moon"
+// disc near the tip, and a pointed tip beyond it — the classic ornate look
+// from the WOOD mockup, built from primitives the sprite can draw fast.
+static void drawBreguetHand( TFT_eSprite &spr, int cx, int cy, float aDeg,
+                             int len, int tail, int shaftW, int moonR,
+                             uint16_t color )
+{
+    float a  = aDeg * DEGTORAD_CF;
+    float ux = cos( a ), uy = sin( a );
+    int   mx = cx + ( int )( ux * ( len * 0.62f ) );
+    int   my = cy + ( int )( uy * ( len * 0.62f ) );
+
+    // tail (counterweight side) + shaft
+    spr.drawWideLine( cx - ( int )( ux * tail ), cy - ( int )( uy * tail ),
+                      mx, my, shaftW, color, color );
+    // moon disc
+    spr.fillCircle( mx, my, moonR, color );
+    // pointed tip flaring out of the moon
+    spr.fillTriangle(
+        mx + ( int )( -uy * moonR ), my + ( int )( ux * moonR ),
+        mx - ( int )( -uy * moonR ), my - ( int )( ux * moonR ),
+        cx + ( int )( ux * len ), cy + ( int )( uy * len ), color );
+}
+
+// Darken an RGB565 colour towards black (used to fake soft shadows —
+// RGB565 has no alpha, so shadows are drawn as a darker shade of the dial).
+static inline uint16_t darken565( uint16_t c, uint8_t shift )
+{
+    uint16_t r = ( c >> 11 ) & 0x1F;
+    uint16_t g = ( c >> 5 ) & 0x3F;
+    uint16_t b = c & 0x1F;
+    r -= r >> shift;
+    g -= g >> shift;
+    b -= b >> shift;
+    return ( uint16_t )( ( r << 11 ) | ( g << 5 ) | b );
 }
 
 void drawClockFace() {
@@ -503,7 +541,13 @@ void updateHands( int h, int m, int s ) {
     if ( themeMode == THEME_WOOD ) {
         // Opaque sprite — the transparent-key push path renders colours
         // unpredictably on this panel, so push like the other themes do.
-        clockSprite.fillSprite( bgColor );
+        // Fill the background with the SAME wood grain as the screen (pure
+        // function of the on-screen y), so the square sprite blends seamlessly
+        // into the textured panel — no visible flat rectangle behind the dial.
+        const int szW = dialRadius() + 3;   // half of the sprite size
+        for ( int yy = 0; yy < szW * 2; yy++ ) {
+            clockSprite.drawFastHLine( 0, yy, szW * 2, woodRowColor( spriteY + yy ) );
+        }
 
         const int  R        = dialRadius();
         const uint16_t brass     = getBrassColor();
@@ -566,22 +610,43 @@ void updateHands( int h, int m, int s ) {
         }
         clockSprite.setFreeFont( NULL );
 
-        // Hands: slim tapered black hour/minute, thin dark second (mockup)
+        // Hands: Breguet-style with soft drop shadows, like the brass mockup.
+        // Second hand kept short of the numerals ring so the dial stays balanced.
         float hA = ( ( h % 12 ) + ( m / 60.0f ) ) * 30.0f - 90.0f;
         float mA = m * 6.0f - 90.0f;
         float sA = s * 6.0f - 90.0f;
-        clockSprite.drawWideLine( sCX, sCY,
-                                  sCX + cos( hA * DEGTORAD_CF ) * ( R - 55 ),
-                                  sCY + sin( hA * DEGTORAD_CF ) * ( R - 55 ),
-                                  4, ink, ink );
-        clockSprite.drawWideLine( sCX, sCY,
-                                  sCX + cos( mA * DEGTORAD_CF ) * ( R - 30 ),
-                                  sCY + sin( mA * DEGTORAD_CF ) * ( R - 30 ),
-                                  2, ink, ink );
-        clockSprite.drawWideLine( sCX, sCY,
-                                  sCX + cos( sA * DEGTORAD_CF ) * ( R - 18 ),
-                                  sCY + sin( sA * DEGTORAD_CF ) * ( R - 18 ),
-                                  1, ink, ink );
+        const int    shX    = 1;                  // subtle 1px shadow: light top-left
+        const int    shY    = 1;
+        const uint16_t shadow = darken565( dial, 2 );
+
+        // --- shadow pass (offset down-right) ---
+        drawBreguetHand( clockSprite, sCX + shX, sCY + shY, hA, R - 52, 15, 4, 5, shadow );
+        drawBreguetHand( clockSprite, sCX + shX, sCY + shY, mA, R - 30, 15, 3, 4, shadow );
+        clockSprite.drawWideLine(
+            sCX + shX + ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+            sCY + shY + ( int )( sin( sA * DEGTORAD_CF ) * 10 ),
+            sCX + shX + ( int )( cos( sA * DEGTORAD_CF ) * ( R - 48 ) ),
+            sCY + shY + ( int )( sin( sA * DEGTORAD_CF ) * ( R - 48 ) ),
+            1, shadow, shadow );
+        clockSprite.fillCircle( sCX + shX, sCY + shY, 5, shadow );
+
+        // --- real hands ---
+        // Length order: minute (reaches ticks) > second (stops inside the
+        // numerals ring at R-42) > hour. Second hand never crosses the numerals.
+        drawBreguetHand( clockSprite, sCX, sCY, hA, R - 52, 15, 4, 5, ink );
+        drawBreguetHand( clockSprite, sCX, sCY, mA, R - 30, 15, 3, 4, ink );
+        // second: hairline, short of the numerals, small counterweight
+        clockSprite.drawWideLine(
+            sCX + ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+            sCY + ( int )( sin( sA * DEGTORAD_CF ) * 10 ),
+            sCX + ( int )( cos( sA * DEGTORAD_CF ) * ( R - 48 ) ),
+            sCY + ( int )( sin( sA * DEGTORAD_CF ) * ( R - 48 ) ),
+            1, ink, ink );
+        clockSprite.fillCircle(
+            sCX - ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+            sCY - ( int )( sin( sA * DEGTORAD_CF ) * 10 ), 2, ink );
+        // hub with its own shadow
+        clockSprite.fillCircle( sCX + shX, sCY + shY, 5, shadow );
         clockSprite.fillCircle( sCX, sCY, 5, brass );
         clockSprite.drawCircle( sCX, sCY, 5, brassDark );
         clockSprite.fillCircle( sCX, sCY, 2, ink );
@@ -621,23 +686,35 @@ void updateHands( int h, int m, int s ) {
     }
     clockSprite.setFreeFont( NULL );
 
-    // Hands
+    // Hands — Breguet style with drop shadows, consistent with the WOOD dial
     float hA = ( ( h % 12 ) + ( m / 60.0f ) ) * 30.0f - 90.0f;
     float mA = m * 6.0f  - 90.0f;
     float sA = s * 6.0f  - 90.0f;
+    const uint16_t handShadow = darken565( (uint16_t)bgColor, 1 );
 
-    clockSprite.drawLine( sCX, sCY,
-                          sCX + ( int )( cos( hA * DEGTORAD_CF ) * ( radius - 35 ) ),
-                          sCY + ( int )( sin( hA * DEGTORAD_CF ) * ( radius - 35 ) ),
-                          mainHandColor );
-    clockSprite.drawLine( sCX, sCY,
-                          sCX + ( int )( cos( mA * DEGTORAD_CF ) * ( radius - 20 ) ),
-                          sCY + ( int )( sin( mA * DEGTORAD_CF ) * ( radius - 20 ) ),
-                          mainHandColor );
-    clockSprite.drawLine( sCX, sCY,
-                          sCX + ( int )( cos( sA * DEGTORAD_CF ) * ( radius - 14 ) ),
-                          sCY + ( int )( sin( sA * DEGTORAD_CF ) * ( radius - 14 ) ),
-                          secColor );
+    // shadow pass
+    drawBreguetHand( clockSprite, sCX + 2, sCY + 2, hA, radius - 35, 12, 3, 4, handShadow );
+    drawBreguetHand( clockSprite, sCX + 2, sCY + 2, mA, radius - 20, 12, 2, 3, handShadow );
+    clockSprite.drawWideLine(
+        sCX + 2 + ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+        sCY + 2 + ( int )( sin( sA * DEGTORAD_CF ) * 10 ),
+        sCX + 2 + ( int )( cos( sA * DEGTORAD_CF ) * ( radius - 22 ) ),
+        sCY + 2 + ( int )( sin( sA * DEGTORAD_CF ) * ( radius - 22 ) ),
+        1, handShadow, handShadow );
+    clockSprite.fillCircle( sCX + 2, sCY + 2, 3, handShadow );
+
+    // real hands — second hand short of the numerals
+    drawBreguetHand( clockSprite, sCX, sCY, hA, radius - 35, 12, 3, 4, mainHandColor );
+    drawBreguetHand( clockSprite, sCX, sCY, mA, radius - 20, 12, 2, 3, mainHandColor );
+    clockSprite.drawWideLine(
+        sCX + ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+        sCY + ( int )( sin( sA * DEGTORAD_CF ) * 10 ),
+        sCX + ( int )( cos( sA * DEGTORAD_CF ) * ( radius - 22 ) ),
+        sCY + ( int )( sin( sA * DEGTORAD_CF ) * ( radius - 22 ) ),
+        1, secColor, secColor );
+    clockSprite.fillCircle(
+        sCX - ( int )( cos( sA * DEGTORAD_CF ) * 10 ),
+        sCY - ( int )( sin( sA * DEGTORAD_CF ) * 10 ), 2, secColor );
     clockSprite.fillCircle( sCX, sCY, 3, TFT_LIGHTGREY );
 
     // Push sprite — single SPI burst, no intermediate state on screen
@@ -782,48 +859,57 @@ void drawWeatherSection() {
         const uint16_t gold  = panelColor( 0xD0A73F );   // saturated gold
         const uint16_t goldD = panelColor( 0x403010 );   // emboss shadow
 
-        // Weather icon, top-left
-        drawWeatherIconVector( weatherCode, 8, 6 );
+        // Layout measured from the mockup (1024x768 → 320x240, scale 0.3125):
+        // one vertical axis at x≈55; vertical rhythm icon 41 / temp 78 /
+        // rule 108 / RH 130 / rule 152 / SAT 166 / day 186 / month 206.
+        // Content stays clear of the carved frame (inner edge ≈ 9 px).
+        const int ax = 55;
 
-        // Ornament helper: thin brass rule with a diamond centre
+        // Weather icon (sun+cloud), centred on the axis
+        drawWeatherIconVector( weatherCode, ax - 20, 23 );
+
+        // Ornament: short symmetric brass rule with a diamond centre
         auto ornament = [ & ]( int y ) {
-            tft.drawFastHLine( 8, y, 42, getBrassDarkColor() );
-            tft.drawFastHLine( 62, y, 42, getBrassDarkColor() );
-            tft.fillCircle( 55, y, 3, getBrassColor() );
-            tft.drawCircle( 55, y, 3, getBrassDarkColor() );
+            tft.drawFastHLine( ax - 26, y, 16, getBrassDarkColor() );
+            tft.drawFastHLine( ax + 10, y, 16, getBrassDarkColor() );
+            tft.fillCircle( ax, y, 2, getBrassColor() );
+            tft.drawCircle( ax, y, 2, getBrassDarkColor() );
         };
 
-        // Big gold temperature "18°" — serif with emboss shadow
+        // Big gold temperature — digits centred, small degree ring top-right
         float dispTemp = weatherUnitF ? ( currentTemp * 9.0 / 5.0 + 32 ) : currentTemp;
-        String tempStr = String( ( int )dispTemp ) + "°";
-        tft.setTextDatum( TL_DATUM );
+        String tempStr = String( ( int )dispTemp );
+        tft.setTextDatum( MC_DATUM );
         tft.setFreeFont( &FreeSerifBold24pt7b );
         tft.setTextColor( goldD );
-        tft.drawString( tempStr, 11, 42 );
+        tft.drawString( tempStr, ax + 1, 79 );
         tft.setTextColor( gold );
-        tft.drawString( tempStr, 9, 40 );
+        tft.drawString( tempStr, ax, 78 );
+        int twT = tft.textWidth( tempStr );
+        drawDegreeCircle( ax + twT / 2 + 5, 66, 3, gold );
 
-        ornament( 92 );
+        ornament( 108 );
 
-        // Big gold humidity "65%"
+        // Big gold humidity, droplet right of the digits at mid-height
         String rhStr = String( currentHumidity ) + "%";
         tft.setFreeFont( &FreeSerifBold18pt7b );
         tft.setTextColor( goldD );
-        tft.drawString( rhStr, 11, 104 );
+        tft.drawString( rhStr, ax + 1, 131 );
         tft.setTextColor( gold );
-        tft.drawString( rhStr, 9, 102 );
+        tft.drawString( rhStr, ax, 130 );
+        int rhW = tft.textWidth( rhStr );
 
         // Small brass water droplet beside the humidity number
-        int dropX = 84, dropY = 114;
+        int dropX = ax + rhW / 2 + 9, dropY = 130;
         tft.fillCircle( dropX, dropY, 5, getBrassColor() );
         tft.fillTriangle( dropX - 4, dropY - 3, dropX + 4, dropY - 3, dropX, dropY - 10, getBrassColor() );
         tft.drawCircle( dropX, dropY, 5, getBrassDarkColor() );
         tft.drawLine( dropX - 3, dropY - 4, dropX, dropY - 10, getBrassDarkColor() );
         tft.drawLine( dropX + 3, dropY - 4, dropX, dropY - 10, getBrassDarkColor() );
 
-        ornament( 138 );
+        ornament( 152 );
 
-        // Stacked date: WED / 5 / NOV (gold serif, centred — mockup has no city)
+        // Stacked date: SAT / 23 / JUN — uniform 12pt, wide even spacing
         struct tm ti;
         if ( getLocalTime( &ti ) ) {
             const char *wd[] = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
@@ -832,11 +918,9 @@ void drawWeatherSection() {
             tft.setTextDatum( MC_DATUM );
             tft.setFreeFont( &FreeSerifBold12pt7b );
             tft.setTextColor( gold );
-            tft.drawString( wd[ ti.tm_wday ], 52, 150 );
-            tft.setFreeFont( &FreeSerifBold24pt7b );
-            tft.drawString( String( ti.tm_mday ), 52, 178 );
-            tft.setFreeFont( &FreeSerifBold12pt7b );
-            tft.drawString( mo[ ti.tm_mon ], 52, 204 );
+            tft.drawString( wd[ ti.tm_wday ], ax, 166 );
+            tft.drawString( String( ti.tm_mday ), ax, 192 );
+            tft.drawString( mo[ ti.tm_mon ], ax, 218 );
         }
         tft.setFreeFont( NULL );
 

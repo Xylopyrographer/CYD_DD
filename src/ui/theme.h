@@ -37,6 +37,10 @@ uint16_t getInkColor();        // warm near-black for numerals / hands on dial
 // reproduce the exact same pattern — no shimmer between refreshes.
 void drawWoodTexture( int x, int y, int w, int h );
 
+// Grain colour of a single screen row — lets opaque sprites (the clock dial)
+// fill their background with the exact same texture as the surrounding wood.
+uint16_t woodRowColor( int y );
+
 // Draws the dark walnut picture-frame border around the whole screen
 // (vintage look). Cheap — a handful of rects, safe to redraw anytime.
 void drawWoodFrame();
