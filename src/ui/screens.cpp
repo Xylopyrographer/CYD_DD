@@ -10,6 +10,7 @@
 #include <XPT2046_Touchscreen.h>
 
 #include "../util/constants.h"
+#include "../util/wifi_store.h"
 #include "../data/app_state.h"
 #include "../data/city_data.h"
 #include "../data/nameday.h"
@@ -1796,10 +1797,7 @@ void handleKeyboardTouch( int x, int y ) {
         if ( currentState == KEYBOARD ) {
             // For WiFi, position 4*bw is the OK button (Green)
             log_d( "[KEYBOARD] WIFI OK pressed" );
-            prefs.begin( "sys", false );
-            prefs.putString( "ssid", selectedSSID );
-            prefs.putString( "pass", obfuscatePassword( passwordBuffer ) );
-            prefs.end();
+            wifiStoreRemember( selectedSSID, passwordBuffer );   // remember for auto-reconnect
 
             ssid = selectedSSID;
             password = passwordBuffer;

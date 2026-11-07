@@ -39,6 +39,7 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 #include "net/timezone.h"
 #include "net/holidays.h"
 #include "net/weather_api.h"
+#include "util/wifi_store.h"
 #include "ui/clock_face.h"
 #include "ui/icons.h"
 #include "ui/screens.h"
@@ -220,6 +221,83 @@ const int SCREEN_WIDTH  = 320;
 const int SCREEN_HEIGHT = 240;
 constexpr float DEGTORAD = ( float )( PI / 180.0 ); // Degrees to radians conversion
 
+// Try every remembered WiFi network, strongest visible signal first (phone-like
+// roaming). Returns true when one of them connects; ssid/password globals are
+// set to the network that worked. showUi=true paints the connecting screen.
+static bool trySavedNetworks( unsigned long timeoutPerNet, bool showUi ) {
+    WifiCred savedNets[ MAX_WIFI_NETWORKS ];
+    int savedCount = 0;
+    wifiStoreLoad( savedNets, savedCount );
+    if ( savedCount == 0 ) {
+        return false;
+    }
+
+    if ( showUi ) {
+        showWifiConnectingScreen( savedNets[ 0 ].ssid );
+    }
+
+    WiFi.mode( WIFI_STA );
+    // Default country "01" (world-safe) only actively scans channels 1-11,
+    // so routers on channel 12/13 (common in CN/EU) are invisible. Enable
+    // the full 2.4 GHz band before any scan or connect.
+    esp_wifi_set_country_code( "CN", true );
+    WiFi.scanDelete();
+    WiFi.disconnect();
+    delay( 100 );
+    int found = WiFi.scanNetworks();
+
+    // Attempt order: saved networks seen in the scan, strongest RSSI first
+    // (scan results are RSSI-sorted), then the rest as fallback (hidden SSID)
+    int order[ MAX_WIFI_NETWORKS ];
+    int orderCount = 0;
+    if ( found > 0 ) {
+        for ( int s = 0; s < found && orderCount < savedCount; s++ ) {
+            String seen = WiFi.SSID( s );
+            for ( int i = 0; i < savedCount; i++ ) {
+                bool taken = false;
+                for ( int j = 0; j < orderCount; j++ ) {
+                    if ( order[ j ] == i ) taken = true;
+                }
+                if ( !taken && seen == savedNets[ i ].ssid ) {
+                    order[ orderCount++ ] = i;
+                    break;
+                }
+            }
+        }
+    }
+    for ( int i = 0; i < savedCount; i++ ) {
+        bool taken = false;
+        for ( int j = 0; j < orderCount; j++ ) {
+            if ( order[ j ] == i ) taken = true;
+        }
+        if ( !taken ) {
+            order[ orderCount++ ] = i;
+        }
+    }
+
+    bool connected = false;
+    for ( int k = 0; k < orderCount && !connected; k++ ) {
+        const WifiCred &net = savedNets[ order[ k ] ];
+        log_d( "[WIFI] Trying saved network: %s", net.ssid.c_str() );
+        if ( showUi ) {
+            showWifiConnectingScreen( net.ssid );
+        }
+        WiFi.begin( net.ssid.c_str(), net.pass.c_str() );
+
+        unsigned long start = millis();
+        while ( WiFi.status() != WL_CONNECTED && millis() - start < timeoutPerNet ) {
+            delay( 500 );
+        }
+        if ( WiFi.status() == WL_CONNECTED ) {
+            ssid = net.ssid;
+            password = net.pass;
+            connected = true;
+        }
+    }
+    WiFi.scanDelete();
+    return connected;
+}
+
 void setup() {
     // Kill backlight FIRST — before tft.init()
     //   LEDC will take over this pin shortly.
@@ -343,58 +421,43 @@ void setup() {
     lastNamedayDay = -1;
     lastNamedayHour = -1;
 
-    // ===== WIFI CONNECTION IF SAVED =====
-    if ( ssid != "" ) {
-        log_d( "[SETUP] Attempting WiFi connection with saved SSID: %s", ssid.c_str() );
-        showWifiConnectingScreen( ssid );
+    // ===== WIFI: AUTO-CONNECT TO ANY SAVED NETWORK (phone-like) =====
+    // All previously configured networks are remembered; at boot we scan and
+    // try them in RSSI order (strongest visible first), so moving between
+    // home/office/hotspot reconnects automatically.
+    if ( trySavedNetworks( WIFI_CONNECT_TIMEOUT, true ) ) {
+        log_i( "[SETUP] WiFi connected successfully" );
+        showWifiResultScreen( true );
+        drawLoadingScreen();      // Show loading screen while NTP syncs
 
-        WiFi.mode( WIFI_STA );
-        // Default country "01" (world-safe) only actively scans channels 1-11,
-        // so routers on channel 12/13 (common in CN/EU) are invisible. Enable
-        // the full 2.4 GHz band before any scan or connect.
-        esp_wifi_set_country_code( "CN", true );
-        WiFi.begin( ssid.c_str(), password.c_str() );
-
-        unsigned long start = millis();
-        while ( WiFi.status() != WL_CONNECTED && millis() - start < WIFI_CONNECT_TIMEOUT ) {
-            delay( 500 );
+        if ( regionAutoMode ) {
+            log_d( "[SETUP] Auto-sync enabled, syncing region..." );
+            syncRegion();
         }
 
-        if ( WiFi.status() == WL_CONNECTED ) {
-            log_i( "[SETUP] WiFi connected successfully" );
-            showWifiResultScreen( true );
-            drawLoadingScreen();      // Show loading screen while NTP syncs
+        // FIX: Ensure NTP sync with active WiFi regardless of syncRegion() result.
+        // If syncRegion fails, applyLocation() is never called and configTime() never
+        // runs with an active network — SNTP daemon waits up to 15 min for retry.
+        // This call restarts NTP sync using posixTZ loaded from preferences.
+        log_d( "[SETUP] Re-applying NTP config with active WiFi..." );
+        configTime( 0, 0, ntpServer );
+        setenv( "TZ", posixTZ.c_str(), 1 );
+        tzset();
 
-            if ( regionAutoMode ) {
-                log_d( "[SETUP] Auto-sync enabled, syncing region..." );
-                syncRegion();
-            }
+        currentState = CLOCK;
+        lastSec = -1;  // Force full redraw in loop()
 
-            // FIX: Ensure NTP sync with active WiFi regardless of syncRegion() result.
-            // If syncRegion fails, applyLocation() is never called and configTime() never
-            // runs with an active network — SNTP daemon waits up to 15 min for retry.
-            // This call restarts NTP sync using posixTZ loaded from preferences.
-            log_d( "[SETUP] Re-applying NTP config with active WiFi..." );
-            configTime( 0, 0, ntpServer );
-            setenv( "TZ", posixTZ.c_str(), 1 );
-            tzset();
-
-            currentState = CLOCK;
-            lastSec = -1;  // Force full redraw in loop()
-
-            handleNamedayUpdate();
-            handleHolidayUpdate();
-        }
-        else {
-            log_w( "[SETUP] WiFi connection failed" );
-            showWifiResultScreen( false );
-            currentState = WIFICONFIG;
-            scanWifiNetworks();
-            drawInitialSetup();
-        }
+        handleNamedayUpdate();
+        handleHolidayUpdate();
     }
     else {
-        log_i( "[SETUP] No saved WiFi, showing setup screen" );
+        if ( wifiStoreCount() > 0 ) {
+            log_w( "[SETUP] No saved network reachable" );
+            showWifiResultScreen( false );
+        }
+        else {
+            log_i( "[SETUP] No saved WiFi, showing setup screen" );
+        }
         currentState = WIFICONFIG;
         scanWifiNetworks();
         drawInitialSetup();
@@ -424,13 +487,26 @@ void loop() {
         }
 
         static unsigned long lastReconnectAttempt = 0;
+        static int reconnectFailCount = 0;
         // Never fire the periodic reconnect while the user is on a WiFi
         // configuration screen: a background re-association aborts scans and
         // manual connect attempts made from those screens.
         bool inWifiConfigScreen = ( currentState == WIFICONFIG || currentState == KEYBOARD || currentState == SSID_INPUT );
         if ( !inWifiConfigScreen && millis() - lastReconnectAttempt > WIFI_RECONNECT_INTERVAL ) {
-            log_i( "WIFI: Attempting reconnect..." );
-            WiFi.reconnect();
+            if ( reconnectFailCount < 3 ) {
+                log_i( "WIFI: Attempting reconnect..." );
+                WiFi.reconnect();
+                reconnectFailCount++;
+            }
+            else {
+                // Quick reconnect keeps failing (device moved to another
+                // location?) — roam: try every remembered network
+                log_i( "WIFI: Reconnect failed %d times, roaming over saved networks...", reconnectFailCount );
+                if ( trySavedNetworks( 8000, false ) ) {
+                    log_i( "WIFI: Roamed to %s", ssid.c_str() );
+                    reconnectFailCount = 0;
+                }
+            }
             lastReconnectAttempt = millis();
         }
     }
