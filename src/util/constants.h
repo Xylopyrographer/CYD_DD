@@ -18,6 +18,7 @@ constexpr int TOUCH_DEBOUNCE_MS  = 200;  // Minimum ms between touch events in m
 constexpr int UI_DEBOUNCE_MS     = 150;  // Button-tap debounce delay after an action
 constexpr int UI_SPLASH_DELAY_MS = 2000; // Duration of splash / status message displays
 constexpr int BRIGHT_MIN         = 30;   // Minimum normal brightness (~12%) — keeps screen interactive
+constexpr int TOUCH_Z_THRESHOLD  = 200;  // Raw XPT2046 pressure — treat as touch at or above this
 
 constexpr unsigned long SETTINGS_INACTIVITY_TIMEOUT = 180000UL; // 3 min — return to CLOCK if no touch while in any settings screen
 
@@ -37,3 +38,6 @@ constexpr int THEME_DARK   = 0;  // Classic dark background
 constexpr int THEME_WHITE  = 1;  // Classic white background
 constexpr int THEME_BLUE   = 2;  // Blue gradient
 constexpr int THEME_YELLOW = 3;  // Yellow gradient
+constexpr int THEME_WOOD   = 4;  // Vintage wood / brass (procedural grain, no bitmap)
+constexpr int THEME_TECH   = 5;  // Dark tech: black bg, cyan accents, three info cards
+constexpr int THEME_CARD   = 6;  // Light cards: cream bg, white cards, blue gradient time card

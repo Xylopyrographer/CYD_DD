@@ -12,7 +12,7 @@
 
 
 // Section 1. Call up the right driver file and any options for it
-#define ILI9341_DRIVER     // Standard ILI9341 driver
+#define ST7789_DRIVER      // CYD2USB (dual USB) uses ST7789; TFT_eSPI applies the 80-row CGRAM offset automatically
 // No TFT_RGB_ORDER override - ILI9341 defaults to RGB
 // No TFT_INVERSION - handled entirely in software via tft.invertDisplay()
 
@@ -39,7 +39,8 @@
 #define SMOOTH_FONT
 
 // Section 4. Other options
-#define SPI_FREQUENCY      55000000 // STM32 SPI1 only (SPI2 maximum is 27MHz)
+#define SPI_FREQUENCY      40000000 // 55MHz is marginal on this panel — dense
+                                    // redraws produce skewed/trailing pixels
 #define SPI_READ_FREQUENCY 20000000
 #define SPI_TOUCH_FREQUENCY 2500000
 

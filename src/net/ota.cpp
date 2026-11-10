@@ -1,5 +1,6 @@
 #include "ota.h"
 
+#include "../ui/cjk_text.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -150,20 +151,20 @@ void performOTAUpdate() {
 
     isUpdating = true;
     updateProgress = 0;
-    updateStatus = "Connecting...";
+    updateStatus = "正在连接...";
 
     tft.fillScreen( TFT_BLACK );
     tft.setTextColor( TFT_WHITE );
     tft.setTextDatum( MC_DATUM );
-    tft.drawString( "FIRMWARE UPDATE", 160, 30, 2 );
+    cjkDraw( "固件升级", 160, 30, 2 );
 
     if ( downloadURL == "" ) {
         log_w( "[OTA] No download URL available!" );
         tft.fillScreen( TFT_BLACK );
         tft.setTextColor( TFT_RED );
-        tft.drawString( "ERROR!", 160, 80, 2 );
+        cjkDraw( "错误！", 160, 80, 2 );
         tft.setTextColor( TFT_WHITE );
-        tft.drawString( "No download URL", 160, 110, 1 );
+        cjkDraw( "无下载地址", 160, 110, 1 );
         delay( 3000 );
         isUpdating = false;
         currentState = FIRMWARE_SETTINGS;
@@ -196,7 +197,7 @@ void performOTAUpdate() {
             // Draw static elements once before the loop
             tft.fillRect( 0, 60, 320, 130, TFT_BLACK );
             tft.setTextColor( TFT_CYAN );
-            tft.drawString( "Downloading...", 160, 70, 2 );
+            cjkDraw( "正在下载...", 160, 70, 2 );
             tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
 
             while ( http.connected() && ( written < ( size_t )contentLength ) ) {
@@ -214,10 +215,10 @@ void performOTAUpdate() {
                         tft.fillRoundRect( 42, 102, ( updateProgress * 236 ) / 100, 21, 3, TFT_CYAN );
                         // Text with bg fill to erase previous value without a fillRect
                         tft.setTextColor( TFT_WHITE, TFT_BLACK );
-                        tft.drawString( String( updateProgress ) + "%", 160, 112, 2 );
+                        cjkDraw( String( updateProgress ) + "%", 160, 112, 2 );
                         tft.setTextColor( TFT_LIGHTGREY, TFT_BLACK );
                         String sizeStr = String( written / 1024 ) + " / " + String( contentLength / 1024 ) + " KB";
-                        tft.drawString( sizeStr, 160, 140, 1 );
+                        cjkDraw( sizeStr, 160, 140, 1 );
 
                         if ( updateProgress % 10 == 0 ) {
                             log_d( "[OTA] Downloading: %d%%", updateProgress );
@@ -231,46 +232,46 @@ void performOTAUpdate() {
             // Draw static elements once before the loop
             tft.fillRect( 0, 60, 320, 130, TFT_BLACK );
             tft.setTextColor( TFT_ORANGE );
-            tft.drawString( "Installing...", 160, 70, 2 );
+            cjkDraw( "正在安装...", 160, 70, 2 );
             tft.drawRoundRect( 40, 100, 240, 25, 4, TFT_DARKGREY );
 
             for ( int i = 0; i <= 100; i += 5 ) {
                 tft.fillRoundRect( 42, 102, ( i * 236 ) / 100, 21, 3, TFT_ORANGE );
                 tft.setTextColor( TFT_WHITE, TFT_BLACK );
-                tft.drawString( String( i ) + "%", 160, 112, 2 );
+                cjkDraw( String( i ) + "%", 160, 112, 2 );
                 delay( 50 );
             }
 
             log_d( "[OTA] Finalizing update..." );
 
             if ( Update.end( true ) ) {
-                updateStatus = "Update successful!";
+                updateStatus = "升级成功！";
                 log_i( "[OTA] Update successful!" );
 
                 tft.fillScreen( TFT_BLACK );
                 tft.setTextColor( TFT_GREEN );
-                tft.drawString( "UPDATE SUCCESS!", 160, 100, 2 );
+                cjkDraw( "升级成功！", 160, 100, 2 );
                 tft.setTextColor( TFT_WHITE );
-                tft.drawString( "Rebooting...", 160, 130, 1 );
+                cjkDraw( "即将重启...", 160, 130, 1 );
                 delay( 2000 );
                 ESP.restart();
             }
             else {
                 // ========== FAILURE - ROLLBACK ==========
-                updateStatus = "Update failed!";
+                updateStatus = "升级失败！";
                 log_e( "[OTA] Update failed: %s", Update.errorString() );
 
                 tft.fillScreen( TFT_BLACK );
                 tft.setTextColor( TFT_RED );
-                tft.drawString( "UPDATE FAILED!", 160, 80, 2 );
+                cjkDraw( "升级失败！", 160, 80, 2 );
                 tft.setTextColor( TFT_ORANGE );
-                tft.drawString( "Rolling back to", 160, 110, 1 );
-                tft.drawString( "previous version...", 160, 125, 1 );
+                cjkDraw( "正在回滚到", 160, 110, 1 );
+                cjkDraw( "之前的版本...", 160, 125, 1 );
 
                 for ( int i = OTA_COUNTDOWN_SECS; i > 0; i-- ) {
                     tft.fillRect( 140, 150, 40, 20, TFT_BLACK );
                     tft.setTextColor( TFT_WHITE );
-                    tft.drawString( String( i ), 160, 160, 2 );
+                    cjkDraw( String( i ), 160, 160, 2 );
                     delay( 1000 );
                 }
 
@@ -282,19 +283,19 @@ void performOTAUpdate() {
         }
         else {
             // ========== INSUFFICIENT SPACE ==========
-            updateStatus = "Not enough space!";
+            updateStatus = "存储空间不足！";
             log_e( "[OTA] Not enough space!" );
 
             tft.fillScreen( TFT_BLACK );
             tft.setTextColor( TFT_RED );
-            tft.drawString( "ERROR!", 160, 80, 2 );
+            cjkDraw( "错误！", 160, 80, 2 );
             tft.setTextColor( TFT_WHITE );
-            tft.drawString( "Not enough storage", 160, 110, 1 );
-            tft.drawString( "space for update", 160, 125, 1 );
+            cjkDraw( "存储空间不足，", 160, 110, 1 );
+            cjkDraw( "无法完成升级", 160, 125, 1 );
 
             for ( int i = OTA_COUNTDOWN_SECS; i > 0; i-- ) {
                 tft.fillRect( 140, 150, 40, 20, TFT_BLACK );
-                tft.drawString( String( i ), 160, 160, 2 );
+                cjkDraw( String( i ), 160, 160, 2 );
                 delay( 1000 );
             }
 
@@ -307,19 +308,19 @@ void performOTAUpdate() {
     }
     else {
         // ========== DOWNLOAD ERROR ==========
-        updateStatus = "Download failed!";
+        updateStatus = "下载失败！";
         log_w( "[OTA] HTTP error: %d", httpCode );
 
         tft.fillScreen( TFT_BLACK );
         tft.setTextColor( TFT_RED );
-        tft.drawString( "DOWNLOAD FAILED!", 160, 80, 2 );
+        cjkDraw( "下载失败！", 160, 80, 2 );
         tft.setTextColor( TFT_WHITE );
-        tft.drawString( "HTTP Error: " + String( httpCode ), 160, 110, 1 );
-        tft.drawString( "Check your connection", 160, 125, 1 );
+        cjkDraw( "HTTP Error: " + String( httpCode ), 160, 110, 1 );
+        cjkDraw( "请检查网络连接", 160, 125, 1 );
 
         for ( int i = OTA_COUNTDOWN_SECS; i > 0; i-- ) {
             tft.fillRect( 140, 150, 40, 20, TFT_BLACK );
-            tft.drawString( String( i ), 160, 160, 2 );
+            cjkDraw( String( i ), 160, 160, 2 );
             delay( 1000 );
         }
 

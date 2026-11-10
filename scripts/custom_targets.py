@@ -61,7 +61,9 @@ def _get_version(project_dir: str) -> str:
 
     main_cpp = os.path.join(project_dir, "src", "main.cpp")
     try:
-        with open(main_cpp, "r") as f:
+        # main.cpp may contain UTF-8 string literals (Chinese UI) — never rely
+        # on the system default encoding (GBK on zh-CN Windows) here.
+        with open(main_cpp, "r", encoding="utf-8", errors="replace") as f:
             for line in f:
                 m = re.search(r'FIRMWARE_VERSION\s*=\s*"([^"]+)"', line)
                 if m:

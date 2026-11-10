@@ -47,7 +47,7 @@ extern unsigned long lastWeatherUpdate;
 // ---------------------------------------------------------------------------
 String syncRegion() {
     if ( WiFi.status() != WL_CONNECTED ) {
-        return "No WiFi connection";
+        return "无 WiFi 连接";
     }
 
     log_d( "[AUTO] Syncing region..." );

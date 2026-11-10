@@ -16,6 +16,7 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <esp_ota_ops.h>
+#include <esp_wifi.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <SPI.h>
@@ -38,6 +39,7 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 #include "net/timezone.h"
 #include "net/holidays.h"
 #include "net/weather_api.h"
+#include "util/wifi_store.h"
 #include "ui/clock_face.h"
 #include "ui/icons.h"
 #include "ui/screens.h"
@@ -57,7 +59,9 @@ Ref: https://github.com/lachimalaif/DataDisplay-V1-instalator/tree/main
 
 // ================= GLOBAL SETTINGS (Must be FIRST) =================
 TFT_eSPI tft = TFT_eSPI();  // pins defined in: include/User_Setup.h
-XPT2046_Touchscreen ts( T_CS, T_IRQ );
+// Polling mode (no IRQ pin): GPIO36 is input-only with no pull-up on ESP32, so the
+// IRQ line can latch low and wedge the touch state machine until reboot.
+XPT2046_Touchscreen ts( T_CS );
 Preferences prefs;
 bool isWhiteTheme = false;  // NOW IT'S HERE, SO EVERYONE CAN SEE IT
 
@@ -69,9 +73,8 @@ bool invertColors = false;  // NEW VARIABLE: Invert colors for CYD boards with i
 bool displayFlipped = false; // true = rotation 3 (180° flipped), false = rotation 1 (normal)
 
 // ================= OTA UPDATE GLOBALS =================
-const char *FIRMWARE_VERSION = "2.1.1";  // CURRENT VERSION
-const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/Xylopyrographer/CYD_DD/main/version.json";
-const char *FIRMWARE_URL = "https://github.com/lachimalaif/DataDisplay-V1-instalator/releases/latest/download/DataDisplayCYD.ino.bin";
+const char *FIRMWARE_VERSION = "2.2.1";  // CURRENT VERSION
+const char *VERSION_CHECK_URL = "https://raw.githubusercontent.com/StarGZZ/CYD_DD/main/version.json";
 
 String availableVersion = "";   // Available version from GitHub
 String downloadURL = "";        // Firmware download URL (from version.json)
@@ -120,8 +123,8 @@ bool initialWeatherFetched = false;
 
 ForecastData forecast[ 2 ];
 // Forecast day name variables
-String forecastDay1Name = "Monday";    // Tomorrow
-String forecastDay2Name = "Tuesday";   // The day after tomorrow
+String forecastDay1Name = "星期一";    // Tomorrow
+String forecastDay2Name = "星期二";   // The day after tomorrow
 
 int moonPhaseVal = 0;
 
@@ -199,7 +202,7 @@ extern const int MENU_ITEM_GAP = 8;
 extern const int MENU_ITEM_SPACING = MENU_ITEM_HEIGHT + MENU_ITEM_GAP;
 
 String ssid, password, selectedSSID, passwordBuffer;
-extern const int MAX_NETWORKS = 20;
+extern const int MAX_NETWORKS = 30;
 String wifiSSIDs[ MAX_NETWORKS ];
 int wifiCount = 0, wifiOffset = 0;
 bool keyboardNumbers = false;
@@ -217,6 +220,83 @@ int touchYMaxF = 200;
 const int SCREEN_WIDTH  = 320;
 const int SCREEN_HEIGHT = 240;
 constexpr float DEGTORAD = ( float )( PI / 180.0 ); // Degrees to radians conversion
+
+// Try every remembered WiFi network, strongest visible signal first (phone-like
+// roaming). Returns true when one of them connects; ssid/password globals are
+// set to the network that worked. showUi=true paints the connecting screen.
+static bool trySavedNetworks( unsigned long timeoutPerNet, bool showUi ) {
+    WifiCred savedNets[ MAX_WIFI_NETWORKS ];
+    int savedCount = 0;
+    wifiStoreLoad( savedNets, savedCount );
+    if ( savedCount == 0 ) {
+        return false;
+    }
+
+    if ( showUi ) {
+        showWifiConnectingScreen( savedNets[ 0 ].ssid );
+    }
+
+    WiFi.mode( WIFI_STA );
+    // Default country "01" (world-safe) only actively scans channels 1-11,
+    // so routers on channel 12/13 (common in CN/EU) are invisible. Enable
+    // the full 2.4 GHz band before any scan or connect.
+    esp_wifi_set_country_code( "CN", true );
+    WiFi.scanDelete();
+    WiFi.disconnect();
+    delay( 100 );
+    int found = WiFi.scanNetworks();
+
+    // Attempt order: saved networks seen in the scan, strongest RSSI first
+    // (scan results are RSSI-sorted), then the rest as fallback (hidden SSID)
+    int order[ MAX_WIFI_NETWORKS ];
+    int orderCount = 0;
+    if ( found > 0 ) {
+        for ( int s = 0; s < found && orderCount < savedCount; s++ ) {
+            String seen = WiFi.SSID( s );
+            for ( int i = 0; i < savedCount; i++ ) {
+                bool taken = false;
+                for ( int j = 0; j < orderCount; j++ ) {
+                    if ( order[ j ] == i ) taken = true;
+                }
+                if ( !taken && seen == savedNets[ i ].ssid ) {
+                    order[ orderCount++ ] = i;
+                    break;
+                }
+            }
+        }
+    }
+    for ( int i = 0; i < savedCount; i++ ) {
+        bool taken = false;
+        for ( int j = 0; j < orderCount; j++ ) {
+            if ( order[ j ] == i ) taken = true;
+        }
+        if ( !taken ) {
+            order[ orderCount++ ] = i;
+        }
+    }
+
+    bool connected = false;
+    for ( int k = 0; k < orderCount && !connected; k++ ) {
+        const WifiCred &net = savedNets[ order[ k ] ];
+        log_d( "[WIFI] Trying saved network: %s", net.ssid.c_str() );
+        if ( showUi ) {
+            showWifiConnectingScreen( net.ssid );
+        }
+        WiFi.begin( net.ssid.c_str(), net.pass.c_str() );
+
+        unsigned long start = millis();
+        while ( WiFi.status() != WL_CONNECTED && millis() - start < timeoutPerNet ) {
+            delay( 500 );
+        }
+        if ( WiFi.status() == WL_CONNECTED ) {
+            ssid = net.ssid;
+            password = net.pass;
+            connected = true;
+        }
+    }
+    WiFi.scanDelete();
+    return connected;
+}
 
 void setup() {
     // Kill backlight FIRST — before tft.init()
@@ -251,7 +331,14 @@ void setup() {
         // FIX: Load saved theme
         themeMode = prefs.getInt( "themeMode", THEME_DARK );
         isWhiteTheme = prefs.getBool( "theme", false );
-        invertColors = prefs.getBool( "invertColors", false );
+        // The vintage WOOD face is always analog (user request) — other themes
+        // keep the user's analog/digital choice
+        if ( themeMode == THEME_WOOD ) {
+            isDigitalClock = false;
+        }
+        // Force normal colours — inversion was toggled accidentally via touch
+        invertColors = false;
+        prefs.putBool( "invertColors", false );
         displayFlipped = prefs.getBool( "dispFlip", false );
 
         // Load OTA settings
@@ -294,7 +381,7 @@ void setup() {
 
     // ===== TFT LCD INITIALIZATION =====
     tft.init();
-    tft.setRotation( displayFlipped ? 3 : 1 );
+    tft.setRotation( displayFlipped ? 1 : 3 );
 
     // NOTE: ILI9341 (original CYD) does NOT have a hardware-inverted display.
     // invertColors=false → normal display, invertColors=true → inverted display.
@@ -334,54 +421,43 @@ void setup() {
     lastNamedayDay = -1;
     lastNamedayHour = -1;
 
-    // ===== WIFI CONNECTION IF SAVED =====
-    if ( ssid != "" ) {
-        log_d( "[SETUP] Attempting WiFi connection with saved SSID: %s", ssid.c_str() );
-        showWifiConnectingScreen( ssid );
+    // ===== WIFI: AUTO-CONNECT TO ANY SAVED NETWORK (phone-like) =====
+    // All previously configured networks are remembered; at boot we scan and
+    // try them in RSSI order (strongest visible first), so moving between
+    // home/office/hotspot reconnects automatically.
+    if ( trySavedNetworks( WIFI_CONNECT_TIMEOUT, true ) ) {
+        log_i( "[SETUP] WiFi connected successfully" );
+        showWifiResultScreen( true );
+        drawLoadingScreen();      // Show loading screen while NTP syncs
 
-        WiFi.mode( WIFI_STA );
-        WiFi.begin( ssid.c_str(), password.c_str() );
-
-        unsigned long start = millis();
-        while ( WiFi.status() != WL_CONNECTED && millis() - start < WIFI_CONNECT_TIMEOUT ) {
-            delay( 500 );
+        if ( regionAutoMode ) {
+            log_d( "[SETUP] Auto-sync enabled, syncing region..." );
+            syncRegion();
         }
 
-        if ( WiFi.status() == WL_CONNECTED ) {
-            log_i( "[SETUP] WiFi connected successfully" );
-            showWifiResultScreen( true );
-            drawLoadingScreen();      // Show loading screen while NTP syncs
+        // FIX: Ensure NTP sync with active WiFi regardless of syncRegion() result.
+        // If syncRegion fails, applyLocation() is never called and configTime() never
+        // runs with an active network — SNTP daemon waits up to 15 min for retry.
+        // This call restarts NTP sync using posixTZ loaded from preferences.
+        log_d( "[SETUP] Re-applying NTP config with active WiFi..." );
+        configTime( 0, 0, ntpServer );
+        setenv( "TZ", posixTZ.c_str(), 1 );
+        tzset();
 
-            if ( regionAutoMode ) {
-                log_d( "[SETUP] Auto-sync enabled, syncing region..." );
-                syncRegion();
-            }
+        currentState = CLOCK;
+        lastSec = -1;  // Force full redraw in loop()
 
-            // FIX: Ensure NTP sync with active WiFi regardless of syncRegion() result.
-            // If syncRegion fails, applyLocation() is never called and configTime() never
-            // runs with an active network — SNTP daemon waits up to 15 min for retry.
-            // This call restarts NTP sync using posixTZ loaded from preferences.
-            log_d( "[SETUP] Re-applying NTP config with active WiFi..." );
-            configTime( 0, 0, ntpServer );
-            setenv( "TZ", posixTZ.c_str(), 1 );
-            tzset();
-
-            currentState = CLOCK;
-            lastSec = -1;  // Force full redraw in loop()
-
-            handleNamedayUpdate();
-            handleHolidayUpdate();
-        }
-        else {
-            log_w( "[SETUP] WiFi connection failed" );
-            showWifiResultScreen( false );
-            currentState = WIFICONFIG;
-            scanWifiNetworks();
-            drawInitialSetup();
-        }
+        handleNamedayUpdate();
+        handleHolidayUpdate();
     }
     else {
-        log_i( "[SETUP] No saved WiFi, showing setup screen" );
+        if ( wifiStoreCount() > 0 ) {
+            log_w( "[SETUP] No saved network reachable" );
+            showWifiResultScreen( false );
+        }
+        else {
+            log_i( "[SETUP] No saved WiFi, showing setup screen" );
+        }
         currentState = WIFICONFIG;
         scanWifiNetworks();
         drawInitialSetup();
@@ -411,15 +487,66 @@ void loop() {
         }
 
         static unsigned long lastReconnectAttempt = 0;
-        if ( millis() - lastReconnectAttempt > WIFI_RECONNECT_INTERVAL ) {
-            log_i( "WIFI: Attempting reconnect..." );
-            WiFi.reconnect();
+        static int reconnectFailCount = 0;
+        // Never fire the periodic reconnect while the user is on a WiFi
+        // configuration screen: a background re-association aborts scans and
+        // manual connect attempts made from those screens.
+        bool inWifiConfigScreen = ( currentState == WIFICONFIG || currentState == KEYBOARD || currentState == SSID_INPUT );
+        if ( !inWifiConfigScreen && millis() - lastReconnectAttempt > WIFI_RECONNECT_INTERVAL ) {
+            if ( reconnectFailCount < 3 ) {
+                log_i( "WIFI: Attempting reconnect..." );
+                WiFi.reconnect();
+                reconnectFailCount++;
+            }
+            else {
+                // Quick reconnect keeps failing (device moved to another
+                // location?) — roam: try every remembered network
+                log_i( "WIFI: Reconnect failed %d times, roaming over saved networks...", reconnectFailCount );
+                if ( trySavedNetworks( 8000, false ) ) {
+                    log_i( "WIFI: Roamed to %s", ssid.c_str() );
+                    reconnectFailCount = 0;
+                }
+            }
             lastReconnectAttempt = millis();
         }
     }
 
-    // 2. TOUCH HANDLING
-    if ( ts.touched() ) {
+    // 2. TOUCH HANDLING — pressure polling.
+    // Do NOT gate on ts.touched() (the PENIRQ line on GPIO36): that pin is
+    // input-only with no pull-up, and the XPT2046 can latch it so touch dies
+    // until reboot while the rest of the firmware keeps running. Polling the
+    // controller directly and gating on Z pressure works regardless of the
+    // IRQ pin state.
+    static uint16_t touchStuckCount = 0;
+
+    TS_Point p = ts.getPoint();
+    bool touchActive = ( p.z >= TOUCH_Z_THRESHOLD );
+
+    // DEBUG: heartbeat so we can tell dead touch from a wedged controller
+    static unsigned long lastTouchPoll = 0;
+    if ( millis() - lastTouchPoll > 2000 ) {
+        lastTouchPoll = millis();
+        log_i( "[TOUCHPOLL] z=%d stuck=%u state=%d", p.z, touchStuckCount, currentState );
+    }
+
+    if ( touchActive ) {
+        // Watchdog: a latched-up XPT2046 can report pressure with invalid
+        // (0,0) coordinates forever. Re-initialise it in place instead of
+        // forcing the user to power-cycle the board.
+        if ( p.x == 0 && p.y == 0 ) {
+            if ( ++touchStuckCount > 40 ) {
+                touchStuckCount = 0;
+                log_w( "[TOUCH] Watchdog: controller latched, re-initialising" );
+                ts.begin();
+                ts.setRotation( 1 );
+                lastTouchTime = millis();
+                return;
+            }
+        }
+        else {
+            touchStuckCount = 0;
+        }
+
         if ( millis() - lastTouchTime < TOUCH_DEBOUNCE_MS ) {
             return;
         }
@@ -430,7 +557,6 @@ void loop() {
             backlightCancelDim();
         }
 
-        TS_Point p = ts.getPoint();
         // Cal values already encode orientation (flipped set has min/max reversed)
         int x = map( p.x, touchXMin, touchXMax, 0, SCREEN_WIDTH  );
         int y = map( p.y, touchYMin, touchYMax, 0, SCREEN_HEIGHT );
@@ -472,6 +598,9 @@ void loop() {
                     }
                     else if ( themeMode == THEME_YELLOW ) {
                         fillGradientVertical( 0, 0, 320, 240, yellowDark, yellowLight );
+                    }
+                    else if ( themeMode == THEME_WOOD ) {
+                        drawWoodTexture( 0, 0, 320, 240 );
                     }
 
                     drawWeatherSection();

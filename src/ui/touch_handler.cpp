@@ -1,6 +1,7 @@
 #include <XPT2046_Touchscreen.h>
 
 #include "touch_handler.h"
+#include "cjk_text.h"
 #include "theme.h"
 #include "icons.h"
 #include "clock_face.h"
@@ -15,6 +16,7 @@
 #include <time.h>
 
 #include "../util/constants.h"
+#include "../util/wifi_store.h"
 #include "../data/app_state.h"
 #include "../data/city_data.h"
 #include "../data/nameday.h"
@@ -488,10 +490,7 @@ void handleTouch( int x, int y ) {
                 return;
             }
             if ( x >= 4 * bw && x <= 5 * bw && y >= by && y <= by + bh ) {
-                prefs.begin( "sys", false );
-                prefs.putString( "ssid", selectedSSID );
-                prefs.putString( "pass", obfuscatePassword( passwordBuffer ) );
-                prefs.end();
+                wifiStoreRemember( selectedSSID, passwordBuffer );   // remember for auto-reconnect
                 ssid = selectedSSID;
                 password = passwordBuffer;
                 showWifiConnectingScreen( ssid );
@@ -785,10 +784,10 @@ void handleTouch( int x, int y ) {
                     }
                     else {
                         drawSyncOverlay( syncErr, true );
-                        // Wait for OK tap
+                        // Wait for OK tap (pressure polling — IRQ line not trusted)
                         while ( true ) {
-                            if ( ts.tirqTouched() && ts.touched() ) {
-                                TS_Point p = ts.getPoint();
+                            TS_Point p = ts.getPoint();
+                            if ( p.z >= TOUCH_Z_THRESHOLD ) {
                                 int tx = constrain( map( p.x, touchXMin, touchXMax, 0, 320 ), 0, 319 );
                                 int ty = constrain( map( p.y, touchYMin, touchYMax, 0, 240 ), 0, 239 );
                                 if ( tx >= 110 && tx <= 210 && ty >= 134 && ty <= 158 ) {
@@ -1147,7 +1146,7 @@ void handleTouch( int x, int y ) {
                     tft.fillScreen( TFT_BLACK );
                     tft.setTextColor( TFT_WHITE );
                     tft.setTextDatum( MC_DATUM );
-                    tft.drawString( "CHECKING...", 160, 100, 2 );
+                    cjkDraw( "正在检查...", 160, 100, 2 );
 
                     checkForUpdate();
 
@@ -1162,7 +1161,7 @@ void handleTouch( int x, int y ) {
 
         case GRAPHICSCONFIG: {
             // ... (Theme code stays the same) ...
-            if ( x >= 20 && x <= 70 && y >= 65 && y <= 95 ) {
+            if ( x >= 4 && x <= 36 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_DARK;
                 isWhiteTheme = false;
                 prefs.begin( "sys", false );
@@ -1174,7 +1173,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 80 && x <= 130 && y >= 65 && y <= 95 ) {
+            if ( x >= 43 && x <= 75 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_WHITE;
                 isWhiteTheme = true;
                 prefs.begin( "sys", false );
@@ -1186,7 +1185,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 140 && x <= 190 && y >= 65 && y <= 95 ) {
+            if ( x >= 82 && x <= 114 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_BLUE;
                 prefs.begin( "sys", false );
                 prefs.putInt( "themeMode", themeMode );
@@ -1196,7 +1195,7 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
-            if ( x >= 200 && x <= 250 && y >= 65 && y <= 95 ) {
+            if ( x >= 121 && x <= 153 && y >= 65 && y <= 95 ) {
                 themeMode = THEME_YELLOW;
                 prefs.begin( "sys", false );
                 prefs.putInt( "themeMode", themeMode );
@@ -1206,9 +1205,36 @@ void handleTouch( int x, int y ) {
                 delay( TOUCH_DEBOUNCE_MS );
                 break;
             }
+            if ( x >= 160 && x <= 192 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_WOOD;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();   // repaints bg incl. wood grain itself
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
+            if ( x >= 199 && x <= 231 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_TECH;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
+            if ( x >= 238 && x <= 270 && y >= 65 && y <= 95 ) {
+                themeMode = THEME_CARD;
+                prefs.begin( "sys", false );
+                prefs.putInt( "themeMode", themeMode );
+                prefs.end();
+                drawGraphicsScreen();
+                delay( TOUCH_DEBOUNCE_MS );
+                break;
+            }
 
             // === NEW INVERT BUTTON ===
-            if ( x >= 260 && x <= 310 && y >= 65 && y <= 95 ) {
+            if ( x >= 277 && x <= 309 && y >= 65 && y <= 95 ) {
                 log_d( "[INVERT] Toggle: %s -> %s", invertColors ? "TRUE" : "FALSE", !invertColors ? "TRUE" : "FALSE" );
                 invertColors = !invertColors;
 
@@ -1267,6 +1293,10 @@ void handleTouch( int x, int y ) {
             // Oblast: x >= 200, y cca 115-143
             if ( x >= 200 && x <= 310 && y >= 115 && y <= 145 ) {
                 isDigitalClock = !isDigitalClock;
+                // WOOD theme is always analog (user request)
+                if ( themeMode == THEME_WOOD ) {
+                    isDigitalClock = false;
+                }
                 prefs.begin( "sys", false );
                 prefs.putBool( "digiClock", isDigitalClock );
                 prefs.end();
@@ -1297,7 +1327,7 @@ void handleTouch( int x, int y ) {
                     touchYMax = prefs.getInt( "calYMax", 3900 );
                 }
                 prefs.end();
-                tft.setRotation( displayFlipped ? 3 : 1 );
+                tft.setRotation( displayFlipped ? 1 : 3 );
                 tft.fillScreen( getBgColor() );
                 drawGraphicsScreen();
                 delay( TOUCH_DEBOUNCE_MS );

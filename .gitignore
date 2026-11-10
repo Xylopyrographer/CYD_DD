@@ -1,7 +1,10 @@
 .pio
 .vscode
+platformio.local.ini
 .DS_Store
 *.bak
+.tools/
+*.bin
 support/
 iterations/
 bin/
@@ -10,3 +13,7 @@ src/idf_component.yml
 PROJECT_CONTEXT.md
 REFACTOR_ANALYSIS.md
 DEVELOPMENT.md
+flash_*.txt
+flash_full.log
+serial_*.txt
+tools/*.png
