@@ -5,6 +5,7 @@
 
 #include <TFT_eSPI.h>
 #include "DSEG7Bold15pt7b.h"
+#include "digits_font.h"
 #include <time.h>
 
 #include "../data/app_state.h"
@@ -129,6 +130,73 @@ static void drawBigTime( const char *str, int cx, int cy, uint16_t color, uint16
     tft.drawString( str, cx, cy );
     tft.setTextFont( 0 );
     tft.setTextDatum( TL_DATUM );
+}
+
+// Big proportional clock digits (TECH theme) — rounded stroke skeletons
+// rasterized by tools/gen_digits_big.py at 2x then downsampled, quantized to
+// TWO 1-bit masks for 2-level anti-aliasing: digitBits (dim edges, drawn
+// first at half brightness) then digitBitsHi (bright core). Rows are drawn
+// as run-length drawFastHLine fills — the path proven solid on this panel.
+static uint16_t halfBright( uint16_t c ) {
+    return ( uint16_t )( ( ( c >> 1 ) & 0xF7DE ) );
+}
+
+static void drawMaskRuns( const uint8_t *blob, int off, int w,
+                          int x, int top, uint16_t color ) {
+    const int rowBytes = ( w + 7 ) / 8;
+    for ( int r = 0; r < DIGIT_GLYPH_H; r++ ) {
+        int runStart = -1;
+        for ( int c = 0; c < w; c++ ) {
+            const uint8_t byte = pgm_read_byte( &blob[ off + r * rowBytes + ( c >> 3 ) ] );
+            const bool bit = byte & ( 0x80 >> ( c & 7 ) );
+            if ( bit && runStart < 0 ) {
+                runStart = c;
+            }
+            else if ( !bit && runStart >= 0 ) {
+                tft.drawFastHLine( x + runStart, top + r, c - runStart, color );
+                runStart = -1;
+            }
+        }
+        if ( runStart >= 0 ) {
+            tft.drawFastHLine( x + runStart, top + r, w - runStart, color );
+        }
+    }
+}
+
+static void drawBigDigits( const char *str, int cx, int cy, uint16_t color ) {
+    const int DIG_GAP = 3, COLON_INK = 16, COLON_GAP = 2;
+    const uint16_t dim = halfBright( color );
+    int total = 0;
+    bool prevColon = false;
+    for ( const char *p = str; *p; p++ ) {
+        const bool isColon = ( *p == ':' );
+        if ( p != str ) total += ( isColon || prevColon ) ? COLON_GAP : DIG_GAP;
+        total += isColon ? COLON_INK : pgm_read_byte( &digitW[ *p - '0' ] );
+        prevColon = isColon;
+    }
+    int x = cx - total / 2;
+    const int top = cy - DIGIT_GLYPH_H / 2;
+    prevColon = false;
+    for ( const char *p = str; *p; p++ ) {
+        const bool isColon = ( *p == ':' );
+        if ( p != str ) x += ( isColon || prevColon ) ? COLON_GAP : DIG_GAP;
+        if ( isColon ) {
+            tft.fillCircle( x + COLON_INK / 2, top + 3 * DIGIT_GLYPH_H / 10, 7, dim );
+            tft.fillCircle( x + COLON_INK / 2, top + 72 * DIGIT_GLYPH_H / 100, 7, dim );
+            tft.fillCircle( x + COLON_INK / 2, top + 3 * DIGIT_GLYPH_H / 10, 4, color );
+            tft.fillCircle( x + COLON_INK / 2, top + 72 * DIGIT_GLYPH_H / 100, 4, color );
+            x += COLON_INK;
+        }
+        else if ( *p >= '0' && *p <= '9' ) {
+            const int idx = *p - '0';
+            const int w = pgm_read_byte( &digitW[ idx ] );
+            const int off = pgm_read_word( &digitOff[ idx ] );
+            drawMaskRuns( digitBits, off, w, x, top, dim );     // AA edge
+            drawMaskRuns( digitBitsHi, off, w, x, top, color ); // bright core
+            x += w;
+        }
+        prevColon = isColon;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -283,14 +351,14 @@ void drawDateAndWeek( const struct tm *ti ) {
     // ── THEME_TECH: date under the seconds — "2025-05-28 周三" ────────────────
     if ( isTechTheme() ) {
         uint16_t bg = getBgColor();
-        tft.fillRect( 108, 172, 208, 30, bg );
+        tft.fillRect( 108, 158, 208, 30, bg );
         char dateBuf[ 16 ];
         strftime( dateBuf, sizeof( dateBuf ), "%Y-%m-%d", ti );
         const char *dayCN[] = { "日", "一", "二", "三", "四", "五", "六" };
         String s = String( dateBuf ) + " 周" + dayCN[ ti->tm_wday ];
         tft.setTextDatum( MC_DATUM );
         tft.setTextColor( techWhite(), bg );
-        cjkDraw( s, 212, 187, 2 );
+        cjkDraw( s, 208, 173, 2 );
         tft.setTextDatum( TL_DATUM );
         return;
     }
@@ -499,8 +567,8 @@ void updateHands( int h, int m, int s ) {
         sprintf( timeStr, "%02d:%02d", h, m );
         static char prevTime[ 6 ] = "";
         if ( forceClockRedraw || strcmp( timeStr, prevTime ) != 0 ) {
-            tft.fillRect( 108, 44, 208, 96, bg );
-            drawBigTime( timeStr, 212, 92, techWhite(), bg, 204 );
+            tft.fillRect( 104, 22, 208, 108, bg );
+            drawBigDigits( timeStr, 208, 75, techWhite() );
             strncpy( prevTime, timeStr, sizeof( prevTime ) );
         }
 
@@ -509,8 +577,8 @@ void updateHands( int h, int m, int s ) {
         tft.setTextDatum( MC_DATUM );
         tft.setFreeFont( &FreeSansBold18pt7b );
         tft.setTextColor( techCyan(), bg );
-        tft.fillRect( 178, 140, 68, 34, bg );
-        tft.drawString( secStr, 212, 158 );
+        tft.fillRect( 168, 126, 76, 34, bg );
+        tft.drawString( secStr, 208, 143 );
         tft.setFreeFont( NULL );
         tft.setTextDatum( TL_DATUM );
         forceClockRedraw = false;
